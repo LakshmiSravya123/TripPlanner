@@ -141,11 +141,50 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
             <div className="relative -mt-20 z-20">
               <div className="container mx-auto px-4 pb-16">
                 <div className="max-w-7xl mx-auto space-y-8">
+            
+            {/* Booking Iframes - MOVED TO VERY TOP - MOST PROMINENT */}
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.05, type: "spring", stiffness: 120 }}
+              className="relative my-8 z-40"
+              style={{ minHeight: '850px' }}
+            >
+              {/* Prominent Header Banner */}
+              <div className="text-center mb-6">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="inline-block"
+                >
+                  <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white px-8 py-4 rounded-2xl text-xl font-bold shadow-2xl mb-4 animate-pulse">
+                    ✈️ Book Your Trip Directly Here
+                  </div>
+                  <p className="text-gray-700 text-base font-medium">
+                    Search and book flights & hotels without leaving this page
+                  </p>
+                </motion.div>
+              </div>
+              
+              <BookingIframes
+                destination={data.destination || "Destination"}
+                startDate={data.dates?.start || new Date().toISOString().split('T')[0]}
+                endDate={data.dates?.end || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                travelers={data.travelers || 2}
+                budgetPerNight={data.budgetPerNight || 200}
+                flightsLink={data.flights?.economy?.link || data.flights?.comfort?.link || data.flights?.premium?.link || buildGoogleFlightsLink(data.destination || "Destination", data.dates?.start || new Date().toISOString().split('T')[0], data.dates?.end || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], "NYC", data.travelers || 2)}
+                hotelsBudgetLink={data.hotels?.budget?.[0]?.link || buildBookingLink(data.destination || "Destination", data.dates?.start || new Date().toISOString().split('T')[0], data.dates?.end || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], data.travelers || 2, Math.round((data.budgetPerNight || 200) * 0.6))}
+                hotelsMidLink={data.hotels?.midRange?.[0]?.link || data.hotels?.mid?.[0]?.link || buildBookingLink(data.destination || "Destination", data.dates?.start || new Date().toISOString().split('T')[0], data.dates?.end || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], data.travelers || 2, Math.round((data.budgetPerNight || 200) * 1.2))}
+                hotelsLuxuryLink={data.hotels?.luxury?.[0]?.link || buildBookingLink(data.destination || "Destination", data.dates?.start || new Date().toISOString().split('T')[0], data.dates?.end || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], data.travelers || 2)}
+              />
+            </motion.div>
+
             {/* Trip Overview */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.15 }}
             >
               <TripOverview
                 destination={data.destination}
@@ -208,42 +247,6 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
               </motion.div>
             )}
 
-            {/* Booking Iframes - Flights & Hotels - PROMINENT SECTION */}
-            <motion.div
-              initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 120 }}
-              className="relative my-12"
-            >
-              {/* Prominent Header Banner */}
-              <div className="text-center mb-6">
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="inline-block"
-                >
-                  <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white px-8 py-4 rounded-2xl text-lg font-bold shadow-2xl mb-4">
-                    ✈️ Book Your Trip Directly Here
-                  </div>
-                  <p className="text-gray-600 text-sm">
-                    Search and book flights & hotels without leaving this page
-                  </p>
-                </motion.div>
-              </div>
-              
-              <BookingIframes
-                destination={data.destination || "Destination"}
-                startDate={data.dates?.start || new Date().toISOString().split('T')[0]}
-                endDate={data.dates?.end || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                travelers={data.travelers || 2}
-                budgetPerNight={200}
-                  flightsLink={data.flights?.economy?.link || data.flights?.comfort?.link || data.flights?.premium?.link || buildGoogleFlightsLink(data.destination || "Destination", data.dates?.start || new Date().toISOString().split('T')[0], data.dates?.end || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], "NYC", data.travelers || 2)}
-                hotelsBudgetLink={data.hotels?.budget?.[0]?.link || buildBookingLink(data.destination || "Destination", data.dates?.start || new Date().toISOString().split('T')[0], data.dates?.end || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], data.travelers || 2, Math.round((data.budgetPerNight || 200) * 0.6))}
-                hotelsMidLink={data.hotels?.midRange?.[0]?.link || data.hotels?.mid?.[0]?.link || buildBookingLink(data.destination || "Destination", data.dates?.start || new Date().toISOString().split('T')[0], data.dates?.end || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], data.travelers || 2, Math.round((data.budgetPerNight || 200) * 1.2))}
-                hotelsLuxuryLink={data.hotels?.luxury?.[0]?.link || buildBookingLink(data.destination || "Destination", data.dates?.start || new Date().toISOString().split('T')[0], data.dates?.end || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], data.travelers || 2)}
-              />
-            </motion.div>
 
             {/* Flights Table (Fallback) */}
             {data.flights && (

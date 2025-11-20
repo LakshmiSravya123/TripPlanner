@@ -128,7 +128,7 @@ export default function BookingIframes({
 
   return (
     <>
-      <Card className="bg-white rounded-3xl overflow-hidden shadow-2xl border-2 border-purple-300/50 hover:border-purple-400 transition-all">
+      <Card className="bg-white rounded-3xl overflow-hidden shadow-2xl border-2 border-purple-300/50 hover:border-purple-400 transition-all" style={{ minHeight: '800px', width: '100%' }}>
         <CardHeader className="bg-gradient-to-r from-purple-100 via-pink-100 to-indigo-100 border-b-2 border-purple-200">
           <div className="flex items-center justify-between">
             <div>
@@ -285,14 +285,15 @@ export default function BookingIframes({
                   {hotelTier === "luxury" && "✨ Premium luxury accommodations"}
                 </p>
               </div>
-              <div className="h-[700px] w-full relative bg-gradient-to-br from-gray-50 to-white rounded-b-lg overflow-hidden border-t-2 border-purple-100">
+              <div className="h-[700px] w-full relative bg-gradient-to-br from-gray-50 to-white rounded-b-lg overflow-hidden border-t-2 border-purple-100" style={{ minHeight: '700px' }}>
                 {/* Loading Overlay */}
                 {!hotelsLoaded && !iframeError.hotels && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 z-20">
                     <div className="text-center">
                       <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                      <p className="text-gray-600 font-medium">Loading Booking.com...</p>
-                      <p className="text-sm text-gray-500 mt-2">This may take a few seconds</p>
+                      <p className="text-gray-600 font-medium text-lg">Loading Booking.com...</p>
+                      <p className="text-sm text-gray-500 mt-2">Searching {hotelTier} hotels in {destination}</p>
+                      <p className="text-xs text-gray-400 mt-1">Dates: {startDate} to {endDate} | Guests: {travelers}</p>
                     </div>
                   </div>
                 )}

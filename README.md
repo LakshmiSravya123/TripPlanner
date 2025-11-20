@@ -1,103 +1,86 @@
-# ✨ AI Trip Planner - The Most Enchanting Travel Experience Ever Created
+# ✨ AI Trip Planner - The Most Magical Travel Experience Ever Created
 
-> **"When someone opens this app, they forget to breathe for 10 seconds, then immediately forward the link to 20 friends saying 'you HAVE to see this'"**
+> **"The first travel app where users can literally book flights and hotels without ever leaving the page"**
 
-A production-ready, Next.js 14 + TypeScript web app that combines Disney-level storytelling, Apple-level polish, and Three.js wizardry to create the most beautiful AI trip planner on the internet.
+A production-ready, Next.js 14 + TypeScript PWA that combines Disney-level storytelling, Apple-level polish, and Three.js wizardry to create the most beautiful AI trip planner on the internet.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/LakshmiSravya123/TripPlanner)
 
-## 🎨 Features
+## 🌟 Features
 
-### Visual & Animation Magic
-- ✨ **Cinematic 3D Liquid Globe** - Particle auroras, real-time destination fly-in
-- 🎭 **Ink-Reveal Typography** - Golden text that writes itself with sparkle trails
-- 🌸 **Cherry Blossom Reveal** - Results bloom from a magical tree
-- 🦋 **Butterfly Confetti** - Golden butterflies on save
-- 💫 **Phoenix Loading** - Light phoenix draws routes on 3D globe
-- 🎪 **Glassmorphism Cards** - Floating glass orbs with pulsing glows
-- 🌊 **Liquid Metal Buttons** - Ripples and chimes on interaction
-- 🌸 **Blooming Interest Chips** - Flower-bloom animations with floating petals
+### ✨ Magical UI & Animations
+- **Cinematic 3D Liquid Globe** - Flies to destination when typed with glowing markers
+- **Glassmorphism Cards** - Floating glass orbs with pulsing glows
+- **Cherry Blossom Reveal** - Results bloom from a magical tree
+- **Butterfly Confetti** - Golden butterflies on save
+- **Phoenix Loading** - Sparkles and soft chimes during trip generation
+- **Liquid Metal Buttons** - Ripples and animations on interaction
+- **Blooming Interest Chips** - Flower-bloom animations with floating petals
 
-### Core Planning Features
-- 🗺️ **Interactive 3D Map** - React-Three-Fiber globe with glowing pins
-- ✈️ **Real Flight Comparisons** - Google Flights with pre-filled booking links
-- 🏨 **Hotel Recommendations** - Booking.com with photos, ratings, direct links
-- ☀️ **Live Weather Forecasts** - Open-Meteo with animated weather icons
-- 📅 **Day-by-Day Itineraries** - Economic, Balanced, and Splurge plans
-- 💰 **Cost Breakdowns** - Per person and total estimates
-- 🎯 **Interest-Based Planning** - AI adapts to your preferences
+### 🎯 Core Features
+- **Live Embedded Google Flights** - Full interactive iframe, pre-filled with dates, travelers, and airport codes
+- **Live Embedded Booking.com** - Three tiers (Economic, Balanced, Luxury) with price filters
+- **AI-Powered Itineraries** - Weather-aware day-by-day plans (Economic, Balanced, Luxury)
+- **Interactive 3D Map** - Glowing pins with place markers
+- **Real Weather Forecasts** - Open-Meteo API integration
+- **My Trips Gallery** - Beautiful 3D orb gallery to view saved trips
+- **AI Chat Buddy** - Floating chat assistant for trip questions
+- **PWA Ready** - Install as native app
 
-### Magic Features
-- 💾 **Save Trips** - Confetti + butterflies + aurora burst
-- 📱 **PWA Ready** - Install as native app
-- 🎵 **Spatial Audio** - Chimes and ambient sounds
-- 📤 **Shareable Links** - Beautiful animated previews
-- 🌙 **Dark Mode** - Cosmic nebula theme with star fields
+### 🎨 Form Features
+- Default destination: **Croatia**
+- Date range picker with smart defaults
+- Travelers selector (1-10)
+- Budget slider ($50-$600/night)
+- Animated interest chips
+- Optional OpenAI API key field (saved locally)
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
-- OpenAI API key
+- OpenAI API key (optional - can be entered in form)
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/LakshmiSravya123/TripPlanner.git
 cd ai-trip-planner
 
 # Install dependencies
 npm install
 
-# Set up environment variables
-cp .env.example .env.local
-# Add your OPENAI_API_KEY to .env.local
+# Create .env.local (optional - API key can be entered in form)
+echo "OPENAI_API_KEY=sk-your-key-here" > .env.local
 
 # Run development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the magic ✨
+Visit `http://localhost:3000`
 
-## 🔑 Environment Variables
+## 📦 Build & Deploy
 
-Create a `.env.local` file:
+### Build for Production
 
-```env
-OPENAI_API_KEY=sk-your-key-here
-
-# Optional - for saving trips
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-CLERK_SECRET_KEY=
-POSTGRES_URL=
+```bash
+npm run build
+npm start
 ```
 
-## 📦 Tech Stack
-
-- **Next.js 14** (App Router) + TypeScript
-- **Tailwind CSS** + Shadcn/UI + Framer Motion
-- **Three.js** + React-Three-Fiber + @react-three/drei
-- **GSAP** + Lenis (smooth scroll)
-- **Vercel AI SDK** + OpenAI (gpt-4o-mini)
-- **Open-Meteo API** (free weather)
-- **Sonner** (toasts) + Confetti Cannon
-- **PWA** support
-
-## 🚀 Deploy to Vercel
-
-### One-Click Deploy
+### Deploy to Vercel (One-Click)
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/LakshmiSravya123/TripPlanner)
 
 1. Click the button above
 2. Connect your GitHub account
 3. Import the `TripPlanner` repository
-4. Add `OPENAI_API_KEY` in Environment Variables
+4. Add `OPENAI_API_KEY` in Environment Variables (optional - users can enter in form)
 5. Deploy! ✨
 
-### Manual Deploy
+### Manual Vercel Deploy
 
 ```bash
 # Install Vercel CLI
@@ -106,78 +89,78 @@ npm i -g vercel
 # Deploy
 vercel
 
-# Add environment variable
+# Add environment variable (optional)
 vercel env add OPENAI_API_KEY
 ```
 
-**Important**: Add your `OPENAI_API_KEY` in Vercel dashboard → Settings → Environment Variables before deploying.
+**Note**: The OpenAI API key is optional. Users can enter their own key in the form, which is stored locally in their browser.
 
-## 📱 PWA Installation
+## 🎯 How It Works
 
-1. Open the app in your browser
-2. Click the install prompt or use browser menu
-3. Add to home screen
-4. Use like a native app!
+1. **Enter Trip Details** - Destination (default: Croatia), dates, travelers, budget, interests
+2. **Watch the Globe Fly** - 3D globe animates to your destination
+3. **AI Generates Plan** - Weather-aware itinerary with 3 budget tiers
+4. **Book Directly** - Use embedded Google Flights and Booking.com iframes
+5. **Save & Share** - Save trips to My Trips gallery
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 14 (App Router) + TypeScript
+- **Styling**: Tailwind CSS + Shadcn/UI
+- **Animations**: Framer Motion + GSAP
+- **3D Graphics**: React-Three-Fiber + Three.js + @react-three/drei
+- **AI**: Vercel AI SDK (gpt-4o-mini)
+- **Maps**: Leaflet + React-Leaflet
+- **Weather**: Open-Meteo API (free, no key)
+- **Storage**: localStorage (can be upgraded to Vercel Postgres)
+- **PWA**: Next.js PWA support
+
+## 📱 PWA Features
+
+- Install prompt on mobile/desktop
+- Offline support
+- App-like experience
+- Splash screens
 
 ## 🎨 Customization
 
-- **Colors**: Edit `tailwind.config.ts`
-- **Animations**: Modify components in `/components/magic`
-- **3D Globe**: Customize `/components/magic/Globe3D.tsx`
-- **Sounds**: Add audio files to `/public/sounds`
+### Change Default Destination
 
-## 📝 Project Structure
-
-```
-ai-trip-planner/
-├── app/                    # Next.js app router
-│   ├── api/trip/          # Trip generation API
-│   ├── page.tsx           # Landing page
-│   └── layout.tsx         # Root layout
-├── components/
-│   ├── magic/             # Magical components
-│   │   ├── Globe3D.tsx    # 3D globe
-│   │   ├── InkRevealText.tsx
-│   │   ├── MagicalForm.tsx
-│   │   ├── CherryBlossomReveal.tsx
-│   │   └── ButterflyConfetti.tsx
-│   ├── TripResults.tsx    # Results page
-│   └── ui/                # Shadcn components
-├── lib/
-│   ├── ai.ts              # OpenAI integration
-│   ├── weather.ts         # Weather API
-│   └── utils.ts           # Utilities
-└── public/                # Static assets
+Edit `components/magic/MagicalForm.tsx`:
+```typescript
+const [destination, setDestination] = useState("Your Destination");
 ```
 
-## 🎯 Roadmap
+### Add More Airport Codes
 
-- [ ] AI Travel Buddy (animated character)
-- [ ] Real-time collaborative planning
-- [ ] "Surprise Me" mode
-- [ ] Carbon footprint calculator
-- [ ] AI-generated trip videos
-- [ ] AR preview
-- [ ] Voice-first mode
-- [ ] Memory Time Machine
-- [ ] Offline-first mode
-- [ ] Gamification system
+Edit `lib/airports.ts`:
+```typescript
+export const airportCodes: Record<string, string> = {
+  // Add your destinations
+  "your city": "AIRPORT_CODE",
+};
+```
 
-## 🤝 Contributing
+## 🔒 Privacy & Security
 
-Contributions welcome! Please read our contributing guidelines first.
+- OpenAI API keys entered in form are stored **locally** in browser
+- No API keys are sent to our servers
+- All trip data stored in localStorage
+- Can be upgraded to Vercel Postgres for cloud storage
 
 ## 📄 License
 
 MIT License - feel free to use this for your own projects!
 
-## 🙏 Acknowledgments
+## 🙏 Credits
 
-- Inspired by layla.ai
-- Built with love using Next.js, Three.js, and Framer Motion
-- Weather data from Open-Meteo
-- Icons from Lucide React
+Built with love using:
+- Next.js
+- React-Three-Fiber
+- Framer Motion
+- OpenAI
+- And many other amazing open-source libraries
 
 ---
 
-**Made with ✨ magic and 💜**
+**Made with ✨ magic and lots of coffee**

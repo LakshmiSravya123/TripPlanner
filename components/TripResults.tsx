@@ -21,6 +21,7 @@ import { getDestinationImage } from "@/lib/images";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import { buildGoogleFlightsLink, buildBookingLink } from "@/lib/utils";
+import { saveTrip } from "@/lib/storage";
 
 const Confetti = dynamic(() => import("react-confetti"), { ssr: false });
 
@@ -37,16 +38,23 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
   const backgroundImage = getDestinationImage(data.destination);
 
   const handleSaveTrip = () => {
-    setShowButterflies(true);
-    setShowConfetti(true);
-    toast.success("Trip saved! ✨", {
-      description: "Your magical journey has been saved to My Trips",
-      duration: 3000,
-    });
-    setTimeout(() => {
-      setShowButterflies(false);
-      setShowConfetti(false);
-    }, 5000);
+    try {
+      const savedTrip = saveTrip(data);
+      setShowButterflies(true);
+      setShowConfetti(true);
+      toast.success("Trip saved! ✨", {
+        description: "Your magical journey has been saved to My Trips",
+        duration: 3000,
+      });
+      setTimeout(() => {
+        setShowButterflies(false);
+        setShowConfetti(false);
+      }, 5000);
+    } catch (error) {
+      toast.error("Failed to save trip", {
+        description: "Please try again",
+      });
+    }
   };
 
   return (
@@ -88,13 +96,23 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back
                   </Button>
-                  <Button
-                    onClick={handleSaveTrip}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white backdrop-blur-sm shadow-xl"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Trip
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleSaveTrip}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white backdrop-blur-sm shadow-xl"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Trip
+                    </Button>
+                    <Button
+                      onClick={() => window.location.href = "/my-trips"}
+                      variant="outline"
+                      className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
+                    >
+                      <FolderOpen className="w-4 h-4 mr-2" />
+                      My Trips
+                    </Button>
+                  </div>
                 </div>
                 
                 <motion.div

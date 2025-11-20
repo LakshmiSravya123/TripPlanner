@@ -71,8 +71,8 @@ export default function MagicalForm({ onSubmit, loading }: MagicalFormProps) {
       endDate,
       travelers,
       group: groupInput || `${travelers} adults`,
-      budget: budgetInput || `$${budget}/night`,
-      budgetPerNight: budget, // Keep for backward compatibility
+      budget: budgetInput || `$200/night`,
+      budgetPerNight: 200, // Keep for backward compatibility (default value)
       interests: selectedInterests,
       openaiKey: openaiKey || undefined,
     });

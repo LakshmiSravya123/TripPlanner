@@ -58,6 +58,34 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
     }
   };
 
+  const handleExportPDF = () => {
+    try {
+      const contentElement = document.getElementById('trip-content');
+      if (contentElement) {
+        exportToPDF(contentElement, `trip-${data.destination}-${data.dates.start}.pdf`)
+          .then(() => {
+            toast.success("PDF exported successfully! 📄", {
+              description: "Your itinerary has been exported",
+              duration: 3000,
+            });
+          })
+          .catch((error) => {
+            toast.error("Failed to export PDF", {
+              description: error.message || "Please try again",
+            });
+          });
+      } else {
+        toast.error("Content not found", {
+          description: "Please try again",
+        });
+      }
+    } catch (error: any) {
+      toast.error("Failed to export PDF", {
+        description: error.message || "Please try again",
+      });
+    }
+  };
+
   return (
     <>
       {/* AI Chat - Always visible */}

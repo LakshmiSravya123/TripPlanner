@@ -55,7 +55,7 @@ export async function generateTripPlan(formData: TripFormData) {
   ) + 1;
 
   // Build booking links
-  const googleFlightsLink = buildGoogleFlightsLink(destination, startDate, endDate, travelers);
+  const googleFlightsLink = buildGoogleFlightsLink(destination, startDate, endDate, "NYC", travelers);
   const bookingBudgetLink = buildBookingLink(destination, startDate, endDate, travelers, Math.round(calculatedBudgetPerNight * 0.7));
   const bookingMidLink = buildBookingLink(destination, startDate, endDate, travelers, Math.round(calculatedBudgetPerNight * 1.2));
   const bookingLuxuryLink = buildBookingLink(destination, startDate, endDate, travelers);
@@ -141,7 +141,7 @@ Return this exact JSON structure:
   "description": "A brief 1-2 sentence overview of ${destination}",
   "overview": {
     "budget": {
-      "accommodation": "$${Math.round(budgetPerNight * numDays)}-$${Math.round(budgetPerNight * 1.2 * numDays)}",
+      "accommodation": "$${Math.round(calculatedBudgetPerNight * numDays)}-$${Math.round(calculatedBudgetPerNight * 1.2 * numDays)}",
       "food": "$X-XX per day",
       "transport": "$X-XX (include pass recommendations)",
       "activities": "$X-XX",
@@ -164,9 +164,9 @@ Return this exact JSON structure:
     "premium": {"airline": "Major Airline", "priceRange": "$1200-1800", "duration": "8h 30m", "link": "${googleFlightsLink}"}
   },
   "hotels": {
-    "budget": [{"name": "Budget Hotel", "location": "City Center", "priceRange": "$${Math.round(budgetPerNight * 0.7)}-$${Math.round(budgetPerNight * 0.9)}", "rating": 4.2, "link": "${bookingBudgetLink}"}],
-    "midRange": [{"name": "Mid-Range Hotel", "location": "City Center", "priceRange": "$${Math.round(budgetPerNight * 1.1)}-$${Math.round(budgetPerNight * 1.3)}", "rating": 4.6, "link": "${bookingMidLink}"}],
-    "luxury": [{"name": "Luxury Hotel", "location": "Prime Location", "priceRange": "$${Math.round(budgetPerNight * 1.5)}-$${Math.round(budgetPerNight * 2)}", "rating": 4.8, "link": "${bookingLuxuryLink}"}]
+    "budget": [{"name": "Budget Hotel", "location": "City Center", "priceRange": "$${Math.round(calculatedBudgetPerNight * 0.7)}-$${Math.round(calculatedBudgetPerNight * 0.9)}", "rating": 4.2, "link": "${bookingBudgetLink}"}],
+    "midRange": [{"name": "Mid-Range Hotel", "location": "City Center", "priceRange": "$${Math.round(calculatedBudgetPerNight * 1.1)}-$${Math.round(calculatedBudgetPerNight * 1.3)}", "rating": 4.6, "link": "${bookingMidLink}"}],
+    "luxury": [{"name": "Luxury Hotel", "location": "Prime Location", "priceRange": "$${Math.round(calculatedBudgetPerNight * 1.5)}-$${Math.round(calculatedBudgetPerNight * 2)}", "rating": 4.8, "link": "${bookingLuxuryLink}"}]
   },
   "itineraries": {
     "economic": [],
@@ -355,9 +355,9 @@ Now generate the detailed itinerary with these specific details:`;
             premium: { airline: "Major Airline", priceRange: "$1200-1800", duration: "8h 30m", link: googleFlightsLink },
           },
           hotels: {
-            budget: [{ name: "Budget Hotel", location: "City Center", priceRange: `$${Math.round(budgetPerNight * 0.7)}-$${Math.round(budgetPerNight * 0.9)}`, rating: 4.2, link: bookingBudgetLink }],
-            midRange: [{ name: "Mid-Range Hotel", location: "City Center", priceRange: `$${Math.round(budgetPerNight * 1.1)}-$${Math.round(budgetPerNight * 1.3)}`, rating: 4.6, link: bookingMidLink }],
-            luxury: [{ name: "Luxury Hotel", location: "Prime Location", priceRange: `$${Math.round(budgetPerNight * 1.5)}-$${Math.round(budgetPerNight * 2)}`, rating: 4.8, link: bookingLuxuryLink }],
+            budget: [{ name: "Budget Hotel", location: "City Center", priceRange: `$${Math.round(calculatedBudgetPerNight * 0.7)}-$${Math.round(calculatedBudgetPerNight * 0.9)}`, rating: 4.2, link: bookingBudgetLink }],
+            midRange: [{ name: "Mid-Range Hotel", location: "City Center", priceRange: `$${Math.round(calculatedBudgetPerNight * 1.1)}-$${Math.round(calculatedBudgetPerNight * 1.3)}`, rating: 4.6, link: bookingMidLink }],
+            luxury: [{ name: "Luxury Hotel", location: "Prime Location", priceRange: `$${Math.round(calculatedBudgetPerNight * 1.5)}-$${Math.round(calculatedBudgetPerNight * 2)}`, rating: 4.8, link: bookingLuxuryLink }],
           },
           itineraries: {
             economic: Array.from({ length: numDays }, (_, i) => ({
@@ -434,11 +434,11 @@ Now generate the detailed itinerary with these specific details:`;
       if (!result.overview) {
         result.overview = {
           budget: {
-            accommodation: `$${Math.round(budgetPerNight * numDays)}-$${Math.round(budgetPerNight * 1.2 * numDays)}`,
+            accommodation: `$${Math.round(calculatedBudgetPerNight * numDays)}-$${Math.round(calculatedBudgetPerNight * 1.2 * numDays)}`,
             food: "$50-100 per day",
             transport: "$100-200",
             activities: "$200-400",
-            total: `$${Math.round((budgetPerNight * numDays + 350) * travelers)}-$${Math.round((budgetPerNight * 1.2 * numDays + 700) * travelers)}`
+            total: `$${Math.round((calculatedBudgetPerNight * numDays + 350) * travelers)}-$${Math.round((calculatedBudgetPerNight * 1.2 * numDays + 700) * travelers)}`
           },
           transportPass: "Check local transport pass options",
           practicalInfo: ["Currency: Check local currency", "Tipping: Check local customs", "SIM/Wi-Fi: Available at airport"]

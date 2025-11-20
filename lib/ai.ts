@@ -3,19 +3,22 @@ import { generateText } from "ai";
 import { getWeatherForecast } from "./weather";
 import { getCoordinates, buildGoogleFlightsLink, buildBookingLink } from "./utils";
 import { getPlaceCoordinates } from "./places";
+import { searchCurrentPrice, searchTravelInfo } from "./web-search";
 
 export interface TripFormData {
   destination: string;
   startDate: string;
   endDate: string;
   travelers: number;
-  budgetPerNight: number;
+  group?: string; // e.g., "2 adults vegetarian"
+  budget?: string; // e.g., "mid ¥200k"
+  budgetPerNight?: number; // For backward compatibility
   interests: string[];
   openaiKey?: string;
 }
 
 export async function generateTripPlan(formData: TripFormData) {
-  const { destination, startDate, endDate, travelers, budgetPerNight, interests } = formData;
+  const { destination, startDate, endDate, travelers, group, budget, budgetPerNight, interests } = formData;
   
   // Get coordinates and weather
   const coords = getCoordinates(destination);
@@ -28,27 +31,64 @@ export async function generateTripPlan(formData: TripFormData) {
     weatherData = await getWeatherForecast(coords[0], coords[1], startDate, numDays);
   }
 
-  // Build booking links
-  const googleFlightsLink = buildGoogleFlightsLink(destination, startDate, endDate);
-  const bookingBudgetLink = buildBookingLink(destination, startDate, endDate, travelers, Math.round(budgetPerNight * 0.7));
-  const bookingMidLink = buildBookingLink(destination, startDate, endDate, travelers, Math.round(budgetPerNight * 1.2));
-  const bookingLuxuryLink = buildBookingLink(destination, startDate, endDate, travelers);
+  // Calculate budgetPerNight from budget string if needed
+  let calculatedBudgetPerNight = budgetPerNight || 200;
+  if (budget && !budgetPerNight) {
+    // Try to extract number from budget string (e.g., "mid ¥200k" -> 200)
+    const budgetMatch = budget.match(/(\d+)/);
+    if (budgetMatch) {
+      const budgetNum = Number(budgetMatch[1]);
+      // If it's in thousands (k), divide by days to get per night
+      if (budget.toLowerCase().includes('k')) {
+        const numDays = Math.ceil(
+          (new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)
+        ) + 1;
+        calculatedBudgetPerNight = Math.round((budgetNum * 1000) / numDays);
+      } else {
+        calculatedBudgetPerNight = budgetNum;
+      }
+    }
+  }
 
   const numDays = Math.ceil(
     (new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)
   ) + 1;
 
+  // Build booking links
+  const googleFlightsLink = buildGoogleFlightsLink(destination, startDate, endDate, travelers);
+  const bookingBudgetLink = buildBookingLink(destination, startDate, endDate, travelers, Math.round(calculatedBudgetPerNight * 0.7));
+  const bookingMidLink = buildBookingLink(destination, startDate, endDate, travelers, Math.round(calculatedBudgetPerNight * 1.2));
+  const bookingLuxuryLink = buildBookingLink(destination, startDate, endDate, travelers);
+
   const weatherSummary = weatherData.length > 0
     ? weatherData.map((w, i) => `Day ${i + 1} (${w.date}): ${w.min}–${w.max}°C, ${w.condition}`).join("\n")
     : "Weather data unavailable. Using general seasonal guidance.";
 
-  const prompt = `You are an expert travel planner. Create a HYPER-DETAILED 7-day travel itinerary for ${destination} starting ${startDate} for ${travelers} ${travelers === 1 ? 'adult' : 'adults'}${interests.includes('vegetarian') || interests.includes('vegan') ? ', vegetarian' : ''}.
+  // Search for current prices and events
+  const jrPassInfo = destination.toLowerCase().includes('japan') 
+    ? await searchCurrentPrice('JR Pass', 'Japan')
+    : '';
+  const currentEvents = await searchTravelInfo(destination, 'current events 2025');
+  const currentPrices = await searchTravelInfo(destination, 'current prices 2025');
 
-Budget: $${budgetPerNight}/night for accommodation
+  const groupDescription = group || `${travelers} ${travelers === 1 ? 'adult' : 'adults'}`;
+  const budgetDescription = budget || (calculatedBudgetPerNight ? `$${calculatedBudgetPerNight}/night` : 'mid-range');
+
+  const systemPrompt = `Generate ONLY: Overview (route, budget breakdown, transport pass, embedded Google Flights iframe for sample round-trip & Booking.com iframes for hotels by city/dates). Then Day-by-Day (date header, timed bullets: activity/time/cost ¥/transport note, unique researched details like weather/events/veggie food—no repeats). End with Tips (apps, sustainability). Exclude Why Visit/Map/intros. Update via web_search for current prices/events (e.g., JR Pass ¥50k). Make engaging/realistic.`;
+
+  const prompt = `You are an expert travel planner. ${systemPrompt}
+
+Create a HYPER-DETAILED travel itinerary for ${destination} starting ${startDate} for ${groupDescription}.
+
+Budget: ${budgetDescription}
 Interests: ${interests.join(", ") || "General travel"}
 
 Weather Forecast:
 ${weatherSummary}
+
+${jrPassInfo ? `Current Transport Info: ${jrPassInfo}\n` : ''}
+${currentEvents ? `Current Events: ${currentEvents}\n` : ''}
+${currentPrices ? `Current Prices: ${currentPrices}\n` : ''}
 
 CRITICAL STRUCTURE - Follow this EXACT format:
 
@@ -179,12 +219,49 @@ Return the JSON now:`;
       process.env.OPENAI_API_KEY = formData.openaiKey;
     }
     
-    const { text } = await generateText({
+    // Chain-of-thought reasoning for better error handling
+    const reasoningPrompt = `${prompt}
+
+If the response seems generic or lacks specifics, use chain-of-thought reasoning:
+1. Analyze what specific details are missing
+2. Research current information about ${destination}
+3. Break down each activity into specific components (time, location, cost, transport)
+4. Verify prices and availability
+5. Generate detailed, unique content with no repeats
+
+Return the JSON now:`;
+
+    let { text } = await generateText({
       model: openai("gpt-4o-mini"),
-      prompt,
+      prompt: reasoningPrompt,
       temperature: 0.7,
       maxTokens: 6000, // Increased significantly for detailed itineraries
     });
+    
+    // If response is too generic, retry with chain-of-thought
+    if (text.includes("generic") || text.length < 500 || !text.includes("activities")) {
+      console.log("Response seems generic, retrying with chain-of-thought...");
+      const chainOfThoughtPrompt = `${prompt}
+
+CHAIN-OF-THOUGHT REASONING REQUIRED:
+1. What specific attractions exist in ${destination}? List 5-10 unique places.
+2. What are current prices for transport passes? (e.g., JR Pass for Japan)
+3. What are typical meal costs in local currency?
+4. What are the best vegetarian restaurants in ${destination}?
+5. What are current events or seasonal considerations?
+6. How do I get from the airport to the city center? Specific route and cost.
+7. What are the opening hours and costs for major attractions?
+
+Now generate the detailed itinerary with these specific details:`;
+
+      const retryResult = await generateText({
+        model: openai("gpt-4o-mini"),
+        prompt: chainOfThoughtPrompt,
+        temperature: 0.7,
+        maxTokens: 6000,
+      });
+      text = retryResult.text;
+    }
     
     // Restore original key
     if (formData.openaiKey && originalKey) {

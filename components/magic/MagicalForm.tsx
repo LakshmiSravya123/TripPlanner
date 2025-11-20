@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Plane, Calendar, Users, DollarSign, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface MagicalFormProps {
   onSubmit: (data: any) => void;
@@ -22,11 +23,12 @@ const interests = [
 
 export default function MagicalForm({ onSubmit, loading }: MagicalFormProps) {
   // Set default to Croatia
-  const [destination, setDestination] = useState("Croatia");
+  const [destination, setDestination] = useState("Japan");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [travelers, setTravelers] = useState(2);
-  const [budget, setBudget] = useState(200);
+  const [groupInput, setGroupInput] = useState("2 adults");
+  const [budgetInput, setBudgetInput] = useState("mid ¥200k");
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [hoveredInterest, setHoveredInterest] = useState<string | null>(null);
   const [openaiKey, setOpenaiKey] = useState("");
@@ -68,7 +70,9 @@ export default function MagicalForm({ onSubmit, loading }: MagicalFormProps) {
       startDate,
       endDate,
       travelers,
-      budgetPerNight: budget,
+      group: groupInput || `${travelers} adults`,
+      budget: budgetInput || `$${budget}/night`,
+      budgetPerNight: budget, // Keep for backward compatibility
       interests: selectedInterests,
       openaiKey: openaiKey || undefined,
     });
@@ -165,7 +169,7 @@ export default function MagicalForm({ onSubmit, loading }: MagicalFormProps) {
         </motion.div>
       </div>
 
-      {/* Travelers & Budget */}
+      {/* Group & Budget */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -174,24 +178,30 @@ export default function MagicalForm({ onSubmit, loading }: MagicalFormProps) {
         >
           <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
             <Users className="w-5 h-5 text-purple-600" />
-            Travelers
+            Group (e.g., "2 adults vegetarian")
           </label>
           <motion.div
             className="relative"
             whileHover={{ scale: 1.02 }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl" />
-            <select
-              value={travelers}
-              onChange={(e) => setTravelers(Number(e.target.value))}
-              className="relative w-full px-6 py-4 rounded-2xl border-2 border-green-200/50 bg-white/80 backdrop-blur-xl focus:border-green-500 focus:outline-none focus:ring-4 focus:ring-green-200/50 transition-all"
-            >
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                <option key={num} value={num}>
-                  {num} {num === 1 ? "Traveler" : "Travelers"}
-                </option>
-              ))}
-            </select>
+            <input
+              type="text"
+              value={travelers === 2 ? "2 adults" : `${travelers} adults`}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Parse number from input (e.g., "2 adults vegetarian" -> 2)
+                const numMatch = value.match(/(\d+)/);
+                if (numMatch) {
+                  setTravelers(Number(numMatch[1]));
+                }
+                // Store full group string for later use
+                setGroupInput(value);
+              }}
+              placeholder="e.g., 2 adults vegetarian"
+              className="relative w-full px-6 py-4 rounded-2xl border-2 border-green-200/50 bg-white/80 backdrop-blur-xl focus:border-green-500 focus:outline-none focus:ring-4 focus:ring-green-200/50 transition-all text-lg"
+              required
+            />
           </motion.div>
         </motion.div>
         <motion.div
@@ -201,28 +211,21 @@ export default function MagicalForm({ onSubmit, loading }: MagicalFormProps) {
         >
           <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
             <DollarSign className="w-5 h-5 text-purple-600" />
-            Budget per Night: <span className="text-purple-600 text-lg">${budget}</span>
+            Budget (e.g., "mid ¥200k")
           </label>
           <motion.div
             className="relative"
             whileHover={{ scale: 1.02 }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 rounded-2xl blur-xl" />
-            <div className="relative px-6 py-4">
-              <input
-                type="range"
-                min="50"
-                max="600"
-                step="10"
-                value={budget}
-                onChange={(e) => setBudget(Number(e.target.value))}
-                className="w-full h-3 bg-gradient-to-r from-purple-200 to-pink-200 rounded-lg appearance-none cursor-pointer accent-purple-600 slider-magic"
-              />
-              <div className="flex justify-between text-xs text-gray-500 mt-2">
-                <span>$50</span>
-                <span>$600</span>
-              </div>
-            </div>
+            <input
+              type="text"
+              value={budgetInput}
+              onChange={(e) => setBudgetInput(e.target.value)}
+              placeholder="e.g., mid ¥200k or $200/night"
+              className="relative w-full px-6 py-4 rounded-2xl border-2 border-amber-200/50 bg-white/80 backdrop-blur-xl focus:border-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-200/50 transition-all text-lg"
+              required
+            />
           </motion.div>
         </motion.div>
       </div>

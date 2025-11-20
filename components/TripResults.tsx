@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, Users, Save, FolderOpen } from "lucide-react";
+import { ArrowLeft, Calendar, Users, Save, FolderOpen, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FlightsTable from "./FlightsTable";
 import HotelsTable from "./HotelsTable";
@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import { buildGoogleFlightsLink, buildBookingLink } from "@/lib/utils";
 import { saveTrip } from "@/lib/storage";
+import { exportToPDF } from "@/lib/pdf-export";
 
 const Confetti = dynamic(() => import("react-confetti"), { ssr: false });
 
@@ -105,23 +106,31 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back
                   </Button>
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={handleSaveTrip}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white backdrop-blur-sm shadow-xl"
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Trip
-                    </Button>
-                    <Button
-                      onClick={() => window.location.href = "/my-trips"}
-                      variant="outline"
-                      className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
-                    >
-                      <FolderOpen className="w-4 h-4 mr-2" />
-                      My Trips
-                    </Button>
-                  </div>
+                      <div className="flex gap-3">
+                        <Button
+                          onClick={handleSaveTrip}
+                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white backdrop-blur-sm shadow-xl"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Save Trip
+                        </Button>
+                        <Button
+                          onClick={handleExportPDF}
+                          variant="outline"
+                          className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Export PDF
+                        </Button>
+                        <Button
+                          onClick={() => window.location.href = "/my-trips"}
+                          variant="outline"
+                          className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
+                        >
+                          <FolderOpen className="w-4 h-4 mr-2" />
+                          My Trips
+                        </Button>
+                      </div>
                 </div>
                 
                 <motion.div

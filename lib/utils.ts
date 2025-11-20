@@ -15,7 +15,8 @@ export function buildGoogleFlightsLink(
   travelers: number = 1
 ): string {
   const destCode = getAirportCode(destination);
-  // Google Flights URL format: https://www.google.com/travel/flights?q=Flights%20from%20JFK%20to%20ZAG%20on%202025-06-15%20through%202025-06-20
+  // Google Flights URL - using airport codes for better results
+  // Format: https://www.google.com/travel/flights?q=Flights%20from%20JFK%20to%20ZAG%20on%202025-06-15%20through%202025-06-20
   return `https://www.google.com/travel/flights?q=Flights%20from%20${origin}%20to%20${destCode}%20on%20${startDate}%20through%20${endDate}&num=${travelers}`;
 }
 
@@ -28,6 +29,7 @@ export function buildBookingLink(
 ): string {
   const destEncoded = encodeURIComponent(destination);
   // Booking.com URL format with proper parameters
+  // Format: https://www.booking.com/searchresults.html?ss=Zagreb&checkin=2025-06-15&checkout=2025-06-20&group_adults=2&no_rooms=1&group_children=0&price=USD-200
   let url = `https://www.booking.com/searchresults.html?ss=${destEncoded}&checkin=${checkin}&checkout=${checkout}&group_adults=${adults}&no_rooms=1&group_children=0`;
   if (maxPrice) {
     url += `&price=USD-${maxPrice}`;

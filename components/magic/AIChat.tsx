@@ -106,12 +106,12 @@ export default function AIChat({ tripData }: AIChatProps) {
       {/* Floating Chat Button */}
       <motion.button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 shadow-2xl flex items-center justify-center text-white hover:scale-110 transition-transform"
+        className="fixed bottom-6 right-6 z-[100] w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 shadow-2xl flex items-center justify-center text-white hover:scale-110 transition-transform"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        transition={{ delay: 1 }}
+        transition={{ delay: 0.5 }}
       >
         {isOpen ? (
           <X className="w-6 h-6" />
@@ -134,7 +134,7 @@ export default function AIChat({ tripData }: AIChatProps) {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-24 right-6 z-50 w-[90vw] md:w-[400px] h-[600px] max-h-[80vh]"
+            className="fixed bottom-24 right-6 z-[100] w-[90vw] md:w-[400px] h-[600px] max-h-[80vh]"
           >
             <Card className="w-full h-full flex flex-col bg-white/95 backdrop-blur-xl shadow-2xl border-2 border-purple-200">
               {/* Header */}

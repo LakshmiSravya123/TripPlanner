@@ -1,19 +1,6 @@
 "use client";
 
-import { useRef, useMemo, useEffect, useState } from "react";
-import * as React from "react";
-
-// Polyfill unstable_act before importing react-three-fiber
-if (typeof window !== 'undefined' && React && !(React as any).unstable_act) {
-  (React as any).unstable_act = (React as any).act || ((fn: () => void) => {
-    try {
-      fn();
-    } catch (e) {
-      // Ignore errors
-    }
-  });
-}
-
+import { useRef, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars, Environment } from "@react-three/drei";
 import * as THREE from "three";

@@ -1,5 +1,8 @@
 "use client";
 
+// Import polyfill first to fix react-three-fiber compatibility
+import "@/lib/react-polyfill";
+
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";

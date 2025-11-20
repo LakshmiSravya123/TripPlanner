@@ -13,18 +13,19 @@ const nextConfig = {
     ],
   },
   webpack: (config, { isServer }) => {
-    // Suppress react-three-fiber unstable_act warning
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
       };
-      
-      // Add alias to handle unstable_act
-      config.resolve.alias = {
-        ...config.resolve.alias,
-      };
     }
+    
+    // Suppress the unstable_act warning from react-three-fiber
+    config.ignoreWarnings = [
+      { module: /node_modules\/@react-three\/fiber/ },
+      { message: /unstable_act/ },
+    ];
+    
     return config;
   },
   // Suppress specific webpack warnings

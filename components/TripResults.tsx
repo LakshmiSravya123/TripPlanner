@@ -10,12 +10,9 @@ import WeatherForecast from "./WeatherForecast";
 import ItineraryTabs from "./ItineraryTabs";
 import CostSummary from "./CostSummary";
 import EnhancedDestinationMap from "./EnhancedDestinationMap";
-import InspirationSection from "./InspirationSection";
-import PlacesGallery from "./PlacesGallery";
 import TripOverview from "./TripOverview";
 import CherryBlossomReveal from "./magic/CherryBlossomReveal";
 import ButterflyConfetti from "./magic/ButterflyConfetti";
-import AIChat from "./magic/AIChat";
 import SidebarAIChat from "./magic/SidebarAIChat";
 import BookingIframes from "./BookingIframes";
 import ItineraryFlowchart from "./itinerary/ItineraryFlowchart";
@@ -63,8 +60,6 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
   return (
     <>
       {/* AI Chat - Always visible */}
-      <AIChat tripData={data} />
-      
       {showConfetti && (
         <Confetti
           width={typeof window !== "undefined" ? window.innerWidth : 0}
@@ -211,21 +206,6 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
               />
             </motion.div>
 
-            {/* Inspiration Section */}
-            {(data.description || data.inspiration) && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-              >
-                <InspirationSection
-                  destination={data.destination}
-                  description={data.description}
-                  inspiration={data.inspiration}
-                />
-              </motion.div>
-            )}
-
             {/* Enhanced Destination Map */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -238,17 +218,6 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
                 description={data.description}
               />
             </motion.div>
-
-            {/* Places Gallery */}
-            {data.places && data.places.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-              >
-                <PlacesGallery destination={data.destination} places={data.places} />
-              </motion.div>
-            )}
 
             {/* Weather Forecast */}
             {data.weather && data.weather.length > 0 && (
@@ -413,21 +382,6 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
                   />
                 </motion.div>
 
-                {/* Inspiration Section */}
-                {(data.description || data.inspiration) && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15 }}
-                  >
-                    <InspirationSection
-                      destination={data.destination}
-                      description={data.description}
-                      inspiration={data.inspiration}
-                    />
-                  </motion.div>
-                )}
-
                 {/* Enhanced Destination Map */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -440,17 +394,6 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
                     description={data.description}
                   />
         </motion.div>
-
-                {/* Places Gallery */}
-                {data.places && data.places.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25 }}
-                  >
-                    <PlacesGallery destination={data.destination} places={data.places} />
-                  </motion.div>
-                )}
 
           {/* Weather Forecast */}
           {data.weather && data.weather.length > 0 && (

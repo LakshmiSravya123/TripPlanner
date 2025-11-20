@@ -3,7 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/Toaster";
 import "leaflet/dist/leaflet.css";
-// Polyfill for react-three-fiber compatibility
+import "mapbox-gl/dist/mapbox-gl.css";
+import "reactflow/dist/style.css";
 
 const inter = Inter({ subsets: ["latin"] });
 

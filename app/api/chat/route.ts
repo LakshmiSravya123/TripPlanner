@@ -1,52 +1,50 @@
-import { NextRequest, NextResponse } from "next/server";
 import { openai } from "@ai-sdk/openai";
-import { generateText } from "ai";
+import { streamText } from "ai";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+export const runtime = "edge";
+
+export async function POST(req: NextRequest) {
   try {
-    const { message, tripData } = await request.json();
+    const { messages, tripData, context } = await req.json();
 
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json(
-        { error: "OpenAI API key is not configured" },
-        { status: 500 }
-      );
-    }
+    const systemPrompt = `You are an AI travel assistant with the power to modify trip itineraries. Your goal is to help users with their trip planning and make real-time changes.
+        ${
+          tripData
+            ? `The user is currently planning a trip to ${tripData.destination} from ${tripData.dates?.start} to ${tripData.dates?.end} for ${tripData.travelers || 2} people.
+            Their budget for accommodation is around $${tripData.budgetPerNight || 200} per night.
+            Their interests include: ${tripData.interests?.join(", ") || "general travel"}.
+            ${tripData.weather ? `The weather forecast for their trip is: ${tripData.weather
+              .map((w: any) => `${w.date}: ${w.min}°C-${w.max}°C, ${w.condition}`)
+              .join("; ")}.` : ""}
+            
+            IMPORTANT: You can regenerate specific days or the entire plan. When users say things like:
+            - "Change Day 3 to beaches" → You should acknowledge and suggest regenerating Day 3
+            - "I don't like Day 2" → Offer to regenerate that day
+            - "Regenerate full plan" → Offer to regenerate everything
+            
+            You can provide information about:
+            - Attractions and activities in ${tripData.destination}
+            - Local cuisine and restaurants
+            - Transportation options
+            - Cultural tips
+            - Weather-appropriate packing advice
+            - Modifying specific days or activities
+            
+            Keep your responses concise and helpful, leveraging the provided trip context.
+            `
+            : "The user has not yet generated a trip plan. Offer general travel advice or ask them about their desired destination, dates, and interests."
+        }
+        `;
 
-    // Build context from trip data if available
-    let context = "";
-    if (tripData) {
-      context = `The user is planning a trip to ${tripData.destination} from ${tripData.dates?.start} to ${tripData.dates?.end} for ${tripData.travelers} traveler(s). `;
-      if (tripData.description) {
-        context += `Destination description: ${tripData.description}. `;
-      }
-      if (tripData.places && tripData.places.length > 0) {
-        context += `Places of interest include: ${tripData.places.map((p: any) => p.name).join(", ")}. `;
-      }
-    }
-
-    const prompt = `You are a friendly, enthusiastic, and magical AI travel assistant. Your personality is:
-- Warm, helpful, and excited about travel
-- Knowledgeable about destinations, culture, food, and experiences
-- Enthusiastic but not overwhelming
-- Use emojis sparingly but effectively (✨ 🗺️ ✈️ 🏨 🍽️ 🎨 🌟)
-- Provide practical, actionable advice
-- Be conversational and friendly
-
-${context ? `Context about the user's trip: ${context}` : ""}
-
-User question: ${message}
-
-Provide a helpful, engaging response that feels personal and magical. Keep it concise (2-4 sentences) but informative.`;
-
-    const { text } = await generateText({
+    const result = await streamText({
       model: openai("gpt-4o-mini"),
-      prompt,
-      temperature: 0.8,
-      maxTokens: 300,
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
+      temperature: 0.7,
+      maxTokens: 500,
     });
 
-    return NextResponse.json({ response: text });
+    return result.toDataStreamResponse();
   } catch (error: any) {
     console.error("Chat API error:", error);
     return NextResponse.json(
@@ -55,4 +53,3 @@ Provide a helpful, engaging response that feels personal and magical. Keep it co
     );
   }
 }
-

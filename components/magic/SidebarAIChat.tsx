@@ -149,16 +149,37 @@ export default function SidebarAIChat({
       };
       setMessages((prev) => [...prev, assistantMessage]);
 
+      // Stream the response
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+        
         const chunk = decoder.decode(value, { stream: true });
-        assistantResponse += chunk;
-        setMessages((prev) =>
-          prev.map((msg, i) =>
-            i === prev.length - 1 ? { ...msg, content: assistantResponse } : msg
-          )
-        );
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('0:')) {
+            try {
+              const data = JSON.parse(line.slice(2));
+              if (data.type === 'text-delta' && data.textDelta) {
+                assistantResponse += data.textDelta;
+                setMessages((prev) =>
+                  prev.map((msg, i) =>
+                    i === prev.length - 1 ? { ...msg, content: assistantResponse } : msg
+                  )
+                );
+              }
+            } catch (e) {
+              // Fallback: treat as plain text
+              assistantResponse += chunk;
+              setMessages((prev) =>
+                prev.map((msg, i) =>
+                  i === prev.length - 1 ? { ...msg, content: assistantResponse } : msg
+                )
+              );
+            }
+          }
+        }
       }
 
       // Trigger regeneration if AI suggests it
@@ -218,6 +239,10 @@ export default function SidebarAIChat({
       animate={{ x: isMinimized ? "calc(100% - 60px)" : 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className={`fixed right-0 top-0 h-full z-50 w-full md:w-[20%] min-w-[320px] max-w-[400px] bg-white shadow-2xl flex flex-col border-l-2 border-purple-200`}
+      style={{ 
+        touchAction: 'pan-y',
+        WebkitOverflowScrolling: 'touch'
+      }}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">

@@ -13,7 +13,6 @@ import ReactFlow, {
   useEdgesState,
   MarkerType,
 } from "reactflow";
-import "reactflow/dist/style.css";
 import { motion } from "framer-motion";
 import { MapPin, Calendar, Clock, Cloud, Sun } from "lucide-react";
 
@@ -191,7 +190,7 @@ export default function ItineraryFlowchart({
   }
 
   return (
-    <div className="w-full h-[700px] bg-white rounded-lg border-2 border-purple-200 overflow-hidden">
+    <div className="w-full h-[700px] bg-white rounded-lg border-2 border-purple-200 overflow-hidden touch-pan-x touch-pan-y">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -201,6 +200,11 @@ export default function ItineraryFlowchart({
         onNodeClick={onNodeClickHandler}
         fitView
         className="bg-gradient-to-br from-purple-50 to-pink-50"
+        panOnDrag={true}
+        panOnScroll={true}
+        zoomOnScroll={true}
+        zoomOnPinch={true}
+        preventScrolling={false}
       >
         <Background color="#e0e7ff" gap={16} />
         <Controls className="bg-white border border-purple-200 rounded-lg shadow-lg" />

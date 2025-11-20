@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { getCoordinates } from "@/lib/utils";
+import { getCoordinates, geocodeDestination } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Info, Clock, Star } from "lucide-react";
 
@@ -40,7 +40,8 @@ interface EnhancedDestinationMapProps {
 export default function EnhancedDestinationMap({ destination, places, description }: EnhancedDestinationMapProps) {
   const [isClient, setIsClient] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const coords = getCoordinates(destination);
+  const [coords, setCoords] = useState<[number, number] | null>(getCoordinates(destination));
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -57,12 +58,46 @@ export default function EnhancedDestinationMap({ destination, places, descriptio
         shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
       });
     }
-  }, []);
+
+    // If coordinates not found, try geocoding
+    if (!coords && !isGeocoding) {
+      setIsGeocoding(true);
+      geocodeDestination(destination)
+        .then((geocodedCoords) => {
+          if (geocodedCoords) {
+            setCoords(geocodedCoords);
+          }
+          setIsGeocoding(false);
+        })
+        .catch(() => {
+          setIsGeocoding(false);
+        });
+    }
+  }, [destination]);
 
   if (!coords) {
     return (
       <Card className="glass-card rounded-2xl p-8 shadow-xl">
-        <p className="text-gray-600 text-center">Map unavailable for this destination</p>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-purple-600" />
+            {destination}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isGeocoding ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-gray-600 text-center">Finding location...</p>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-2">Map unavailable for "{destination}"</p>
+              <p className="text-sm text-gray-500">Unable to find coordinates for this destination</p>
+            </div>
+          )}
+        </CardContent>
       </Card>
     );
   }

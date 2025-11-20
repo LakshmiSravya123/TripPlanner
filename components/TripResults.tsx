@@ -15,9 +15,12 @@ import PlacesGallery from "./PlacesGallery";
 import TripOverview from "./TripOverview";
 import CherryBlossomReveal from "./magic/CherryBlossomReveal";
 import ButterflyConfetti from "./magic/ButterflyConfetti";
+import AIChat from "./magic/AIChat";
+import BookingIframes from "./BookingIframes";
 import { getDestinationImage } from "@/lib/images";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
+import { buildGoogleFlightsLink, buildBookingLink } from "@/lib/utils";
 
 const Confetti = dynamic(() => import("react-confetti"), { ssr: false });
 
@@ -58,6 +61,7 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
         />
       )}
       <ButterflyConfetti trigger={showButterflies} />
+      <AIChat tripData={data} />
       {showCherryBlossom ? (
         <CherryBlossomReveal onComplete={() => setShowCherryBlossom(false)}>
           <div className="min-h-screen relative">
@@ -184,23 +188,44 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
               </motion.div>
             )}
 
-            {/* Flights Table */}
-            {data.flights && (
+            {/* Booking Iframes - Flights & Hotels */}
+            {data.flights && data.hotels && data.dates && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                <FlightsTable flights={data.flights} />
+                <BookingIframes
+                  destination={data.destination}
+                  startDate={data.dates.start}
+                  endDate={data.dates.end}
+                  travelers={data.travelers}
+                  budgetPerNight={200}
+                  flightsLink={data.flights.economy?.link || buildGoogleFlightsLink(data.destination, data.dates.start, data.dates.end)}
+                  hotelsBudgetLink={data.hotels.budget?.[0]?.link || buildBookingLink(data.destination, data.dates.start, data.dates.end, data.travelers, 100)}
+                  hotelsMidLink={data.hotels.midRange?.[0]?.link || buildBookingLink(data.destination, data.dates.start, data.dates.end, data.travelers, 200)}
+                  hotelsLuxuryLink={data.hotels.luxury?.[0]?.link || buildBookingLink(data.destination, data.dates.start, data.dates.end, data.travelers)}
+                />
               </motion.div>
             )}
 
-            {/* Hotels Table */}
-            {data.hotels && (
+            {/* Flights Table (Fallback) */}
+            {data.flights && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35 }}
+              >
+                <FlightsTable flights={data.flights} />
+              </motion.div>
+            )}
+
+            {/* Hotels Table (Fallback) */}
+            {data.hotels && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
               >
                 <HotelsTable hotels={data.hotels} />
               </motion.div>

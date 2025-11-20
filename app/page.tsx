@@ -1,8 +1,5 @@
 "use client";
 
-// Import polyfill first to fix react-three-fiber compatibility
-import "@/lib/react-polyfill";
-
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
@@ -39,6 +36,7 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
+        credentials: "same-origin",
       });
       
       let result;
@@ -91,29 +89,41 @@ export default function Home() {
 
   return (
     <main className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Animated background particles */}
-      <div className="absolute inset-0 overflow-hidden">
-        {typeof window !== "undefined" && [...Array(50)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-purple-400 rounded-full"
-            initial={{
-              x: Math.random() * (window.innerWidth || 1920),
-              y: Math.random() * (window.innerHeight || 1080),
-              opacity: 0,
-            }}
-            animate={{
-              y: [null, Math.random() * (window.innerHeight || 1080)],
-              opacity: [0, 0.5, 0],
-            }}
-            transition={{
-              duration: Math.random() * 10 + 10,
-              repeat: Infinity,
-              delay: Math.random() * 5,
-            }}
-          />
-        ))}
-      </div>
+      {/* Animated background particles - Client only to avoid hydration mismatch */}
+      {typeof window !== "undefined" && (
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(50)].map((_, i) => {
+            // Use deterministic seed for each particle to avoid hydration mismatch
+            const seed = i * 12345;
+            const seededRandom = (multiplier: number) => {
+              const x = Math.sin(seed + multiplier) * 10000;
+              return x - Math.floor(x);
+            };
+            const width = window.innerWidth || 1920;
+            const height = window.innerHeight || 1080;
+            return (
+              <motion.div
+                key={`particle-${i}`}
+                className="absolute w-1 h-1 bg-purple-400 rounded-full"
+                initial={{
+                  x: seededRandom(1) * width,
+                  y: seededRandom(2) * height,
+                  opacity: 0,
+                }}
+                animate={{
+                  y: [null, seededRandom(3) * height],
+                  opacity: [0, 0.5, 0],
+                }}
+                transition={{
+                  duration: seededRandom(4) * 10 + 10,
+                  repeat: Infinity,
+                  delay: seededRandom(5) * 5,
+                }}
+              />
+            );
+          })}
+        </div>
+      )}
 
       <div ref={containerRef} className="relative z-10 container mx-auto px-4 py-8 md:py-16">
         {/* Hero Section with 3D Globe */}

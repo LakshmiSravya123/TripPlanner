@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plane, Hotel, X, ExternalLink } from "lucide-react";
@@ -65,6 +65,8 @@ export default function BookingIframes({
 
   // Timeout check for iframes - many sites block iframe embedding
   useEffect(() => {
+    if (activeTab !== "flights" && activeTab !== "hotels") return;
+    
     const flightsTimer = setTimeout(() => {
       if (!flightsLoaded && !iframeError.flights && activeTab === "flights") {
         try {
@@ -107,24 +109,24 @@ export default function BookingIframes({
       clearTimeout(flightsTimer);
       clearTimeout(hotelsTimer);
     };
-  }, [activeTab, flightsLoaded, hotelsLoaded, iframeError, hotelTier]);
+  }, [activeTab, flightsLoaded, hotelsLoaded, iframeError.flights, iframeError.hotels, hotelTier, handleIframeLoad, handleIframeError]);
 
-  const handleIframeLoad = (type: "flights" | "hotels") => {
+  const handleIframeLoad = useCallback((type: "flights" | "hotels") => {
     if (type === "flights") {
       setFlightsLoaded(true);
     } else {
       setHotelsLoaded(true);
     }
-  };
+  }, []);
 
-  const handleIframeError = (type: "flights" | "hotels") => {
+  const handleIframeError = useCallback((type: "flights" | "hotels") => {
     setIframeError(prev => ({ ...prev, [type]: true }));
     if (type === "flights") {
       setFlightsLoaded(true); // Hide loading even on error
     } else {
       setHotelsLoaded(true);
     }
-  };
+  }, []);
 
   return (
     <>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, Users, Save } from "lucide-react";
+import { ArrowLeft, Calendar, Users, Save, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FlightsTable from "./FlightsTable";
 import HotelsTable from "./HotelsTable";

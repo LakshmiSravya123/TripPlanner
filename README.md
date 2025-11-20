@@ -4,7 +4,7 @@
 
 A production-ready, Next.js 14 + TypeScript web app that combines Disney-level storytelling, Apple-level polish, and Three.js wizardry to create the most beautiful AI trip planner on the internet.
 
-![Deploy with Vercel](https://vercel.com/button)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/LakshmiSravya123/TripPlanner)
 
 ## 🎨 Features
 
@@ -89,7 +89,13 @@ POSTGRES_URL=
 
 ### One-Click Deploy
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=YOUR_REPO_URL)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/LakshmiSravya123/TripPlanner)
+
+1. Click the button above
+2. Connect your GitHub account
+3. Import the `TripPlanner` repository
+4. Add `OPENAI_API_KEY` in Environment Variables
+5. Deploy! ✨
 
 ### Manual Deploy
 
@@ -99,9 +105,12 @@ npm i -g vercel
 
 # Deploy
 vercel
+
+# Add environment variable
+vercel env add OPENAI_API_KEY
 ```
 
-Add your `OPENAI_API_KEY` in Vercel dashboard → Settings → Environment Variables
+**Important**: Add your `OPENAI_API_KEY` in Vercel dashboard → Settings → Environment Variables before deploying.
 
 ## 📱 PWA Installation
 

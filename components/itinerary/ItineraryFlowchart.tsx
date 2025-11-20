@@ -46,12 +46,15 @@ export default function ItineraryFlowchart({
     const nodes: Node[] = [];
     const edges: Edge[] = [];
 
-    if (!itinerary.days || !Array.isArray(itinerary.days)) {
+    // Handle both old format (itinerary.days) and new format (direct array)
+    const daysArray = Array.isArray(itinerary) ? itinerary : (itinerary.days || []);
+    
+    if (!daysArray || daysArray.length === 0) {
       return { initialNodes: nodes, initialEdges: edges };
     }
 
-    itinerary.days.forEach((day: any, dayIndex: number) => {
-      const dayNumber = dayIndex + 1;
+    daysArray.forEach((day: any, dayIndex: number) => {
+      const dayNumber = day.day || dayIndex;
       const dayY = dayIndex * 300;
 
       // Day header node
@@ -64,8 +67,11 @@ export default function ItineraryFlowchart({
             <div className="px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg shadow-lg">
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
-                <span className="font-bold text-lg">Day {dayNumber}</span>
-                {day.date && <span className="text-sm opacity-90">({day.date})</span>}
+                <div>
+                  <span className="font-bold text-lg">Day {dayNumber}</span>
+                  {day.title && <div className="text-xs opacity-90 mt-0.5">{day.title}</div>}
+                  {day.date && <span className="text-sm opacity-90">({day.date})</span>}
+                </div>
               </div>
             </div>
           ),
@@ -91,30 +97,35 @@ export default function ItineraryFlowchart({
                     <Clock className="w-4 h-4 text-purple-600 mt-0.5" />
                     <span className="text-xs font-semibold text-gray-600">{activity.time || "All Day"}</span>
                   </div>
-                  <h4 className="font-bold text-gray-900 mb-1">{activity.title || activity.name}</h4>
+                  <h4 className="font-bold text-gray-900 mb-1 text-sm">{activity.title || activity.name || "Activity"}</h4>
                   {activity.location && (
-                    <div className="flex items-center gap-1 text-xs text-gray-600 mb-2">
-                      <MapPin className="w-3 h-3" />
-                      <span>{activity.location}</span>
+                    <div className="flex items-center gap-1 text-xs text-gray-600 mb-1">
+                      <MapPin className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate">{activity.location}</span>
+                    </div>
+                  )}
+                  {activity.transportation && (
+                    <div className="text-xs text-purple-600 mb-1 font-medium">
+                      🚇 {activity.transportation}
                     </div>
                   )}
                   {activity.description && (
-                    <p className="text-xs text-gray-600 line-clamp-2">{activity.description}</p>
+                    <p className="text-xs text-gray-600 line-clamp-3 mb-1">{activity.description}</p>
                   )}
-                  {activity.weather && (
-                    <div className="flex items-center gap-1 mt-2 text-xs">
-                      {activity.weather.includes("rain") || activity.weather.includes("cloud") ? (
-                        <Cloud className="w-3 h-3 text-blue-500" />
-                      ) : (
-                        <Sun className="w-3 h-3 text-yellow-500" />
-                      )}
-                      <span className="text-gray-600">{activity.weather}</span>
+                  {activity.cost && (
+                    <div className="text-xs font-semibold text-green-600 mb-1">
+                      💰 {activity.cost}
+                    </div>
+                  )}
+                  {activity.tips && (
+                    <div className="text-xs text-amber-600 italic mt-1 border-t border-gray-200 pt-1">
+                      💡 {activity.tips}
                     </div>
                   )}
                 </div>
               ),
             },
-            style: { width: 280 },
+            style: { width: 300 },
           };
           nodes.push(activityNode);
 

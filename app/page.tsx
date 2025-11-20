@@ -32,12 +32,30 @@ export default function Home() {
     setDestination(formData.destination);
     
     try {
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+
       const response = await fetch("/api/trip", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
         credentials: "same-origin",
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        let errorText = "";
+        try {
+          const errorData = await response.json();
+          errorText = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+        } catch {
+          errorText = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorText);
+      }
       
       let result;
       try {
@@ -49,22 +67,23 @@ export default function Home() {
         throw new Error("Invalid response from server. Please check your API key and try again.");
       }
       
-      if (response.ok) {
-        // Cherry blossom reveal animation
-        setTimeout(() => {
-          setTripData(result);
-          setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 5000);
-        }, 2000);
-      } else {
-        console.error("API Error:", result);
-        const errorMessage = result?.error || "Unknown error occurred";
-        alert(`Error generating trip plan: ${errorMessage}\n\nPlease check:\n1. Your OpenAI API key is set correctly\n2. You have API credits available\n3. Your internet connection is stable`);
-      }
+      // Cherry blossom reveal animation
+      setTimeout(() => {
+        setTripData(result);
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 5000);
+      }, 2000);
     } catch (error: any) {
       console.error("Error generating trip:", error);
-      const errorMessage = error?.message || "Network error or server unavailable";
-      alert(`Failed to generate trip plan: ${errorMessage}\n\nPlease check:\n1. Your OpenAI API key is set in .env.local\n2. The dev server is running\n3. Your internet connection is stable`);
+      let errorMessage = "Network error or server unavailable";
+      
+      if (error.name === "AbortError") {
+        errorMessage = "Request timed out. The trip generation is taking too long. Please try again.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(`Failed to generate trip plan: ${errorMessage}\n\nPlease check:\n1. Your OpenAI API key is set correctly\n2. You have API credits available\n3. Your internet connection is stable\n4. The server is running properly`);
     } finally {
       setLoading(false);
     }

@@ -75,15 +75,17 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
         />
       )}
       <ButterflyConfetti trigger={showButterflies} />
-      <SidebarAIChat 
-        tripData={data} 
-        onRegenerateDay={(day, content) => {
-          toast.info(`Regenerating Day ${day}...`);
-        }}
-        onRegenerateFull={() => {
-          toast.info("Regenerating full plan...");
-        }}
-      />
+      {typeof window !== "undefined" && (
+        <SidebarAIChat 
+          tripData={data} 
+          onRegenerateDay={(day, content) => {
+            toast.info(`Regenerating Day ${day}...`);
+          }}
+          onRegenerateFull={() => {
+            toast.info("Regenerating full plan...");
+          }}
+        />
+      )}
       {showCherryBlossom ? (
         <CherryBlossomReveal onComplete={() => setShowCherryBlossom(false)}>
           <div className="min-h-screen relative">
@@ -284,12 +286,12 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
 
             {/* Itinerary Flowchart */}
             {data.itineraries && (
-              <motion.div
+        <motion.div
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="mb-8"
-              >
+          className="mb-8"
+        >
                 <div className="bg-white rounded-2xl p-6 shadow-xl border-2 border-purple-200">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Calendar className="w-6 h-6 text-purple-600" />
@@ -351,14 +353,14 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
             
             <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-between py-8">
               <div className="flex justify-between items-start">
-                <Button
-                  onClick={onBack}
-                  variant="ghost"
+          <Button
+            onClick={onBack}
+            variant="ghost"
                   className="text-white hover:bg-white/20 backdrop-blur-sm"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
                 <Button
                   onClick={handleSaveTrip}
                   className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white backdrop-blur-sm shadow-xl"
@@ -375,16 +377,16 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
               >
                 <h1 className="text-5xl md:text-7xl font-bold mb-4 tracking-tight drop-shadow-lg">
                   {data.destination}
-                </h1>
+            </h1>
                 <div className="flex items-center justify-center gap-6 text-white/90 mt-4">
                   <span className="flex items-center gap-2 backdrop-blur-sm bg-white/10 px-4 py-2 rounded-full">
-                    <Calendar className="w-5 h-5" />
-                    {data.dates.start} - {data.dates.end}
-                  </span>
+                <Calendar className="w-5 h-5" />
+                {data.dates.start} - {data.dates.end}
+              </span>
                   <span className="flex items-center gap-2 backdrop-blur-sm bg-white/10 px-4 py-2 rounded-full">
-                    <Users className="w-5 h-5" />
-                    {data.travelers} {data.travelers === 1 ? "Traveler" : "Travelers"}
-                  </span>
+                <Users className="w-5 h-5" />
+                {data.travelers} {data.travelers === 1 ? "Traveler" : "Travelers"}
+              </span>
                 </div>
               </motion.div>
             </div>
@@ -437,7 +439,7 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
                     places={data.places}
                     description={data.description}
                   />
-                </motion.div>
+        </motion.div>
 
                 {/* Places Gallery */}
                 {data.places && data.places.length > 0 && (
@@ -450,38 +452,38 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
                   </motion.div>
                 )}
 
-                {/* Weather Forecast */}
-                {data.weather && data.weather.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+          {/* Weather Forecast */}
+          {data.weather && data.weather.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                  >
-                    <WeatherForecast weather={data.weather} />
-                  </motion.div>
-                )}
+            >
+              <WeatherForecast weather={data.weather} />
+            </motion.div>
+          )}
 
-                {/* Flights Table */}
-                {data.flights && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+          {/* Flights Table */}
+          {data.flights && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.35 }}
-                  >
-                    <FlightsTable flights={data.flights} />
-                  </motion.div>
-                )}
+            >
+              <FlightsTable flights={data.flights} />
+            </motion.div>
+          )}
 
-                {/* Hotels Table */}
-                {data.hotels && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+          {/* Hotels Table */}
+          {data.hotels && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                  >
-                    <HotelsTable hotels={data.hotels} />
-                  </motion.div>
-                )}
+            >
+              <HotelsTable hotels={data.hotels} />
+            </motion.div>
+          )}
 
                       {/* Interactive Map with Flowchart Overlay */}
                       {data.places && data.places.length > 0 && (
@@ -532,33 +534,33 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
                       )}
 
                       {/* Itinerary Tabs (Fallback/Detailed View) */}
-                      {data.itineraries && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
+          {data.itineraries && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.5 }}
-                        >
-                          <ItineraryTabs
-                            itineraries={data.itineraries}
-                            activeTab={activeTab}
-                            onTabChange={setActiveTab}
-                          />
-                        </motion.div>
-                      )}
+            >
+              <ItineraryTabs
+                itineraries={data.itineraries}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+              />
+            </motion.div>
+          )}
 
-                {/* Cost Summary */}
-                {data.costs && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                  >
-                    <CostSummary costs={data.costs} />
-                  </motion.div>
-                )}
-              </div>
-            </div>
-          </div>
+          {/* Cost Summary */}
+          {data.costs && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <CostSummary costs={data.costs} />
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </div>
         </div>
       )}
     </>

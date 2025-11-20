@@ -24,14 +24,22 @@ export default function SidebarAIChat({
   onRegenerateDay,
   onRegenerateFull,
 }: SidebarAIChatProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  // Initialize state only on client to prevent hydration mismatches
+  const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Set mounted flag and open sidebar on client mount
+  useEffect(() => {
+    setMounted(true);
+    setIsOpen(true);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -42,6 +50,7 @@ export default function SidebarAIChat({
   }, [messages]);
 
   useEffect(() => {
+    if (!mounted) return;
     if (isOpen && messages.length === 0) {
       const initialMessage: Message = {
         role: "assistant",
@@ -52,12 +61,17 @@ export default function SidebarAIChat({
       };
       setMessages([initialMessage]);
     }
-  }, [isOpen, messages.length, tripData]);
+  }, [mounted, isOpen, messages.length, tripData]);
 
-  // Voice recognition setup
+  // Voice recognition setup - only on client
   useEffect(() => {
-    if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition;
+    if (typeof window === "undefined") return;
+    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) return;
+
+    try {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+      if (!SpeechRecognition) return;
+
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
@@ -77,10 +91,17 @@ export default function SidebarAIChat({
       recognitionRef.current.onend = () => {
         setIsListening(false);
       };
+    } catch (error) {
+      console.warn("Speech recognition not available:", error);
     }
+
     return () => {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
       }
     };
   }, []);
@@ -219,6 +240,11 @@ export default function SidebarAIChat({
       handleSend();
     }
   };
+
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   if (!isOpen) {
     return (

@@ -42,7 +42,7 @@ export async function generateTripPlan(formData: TripFormData) {
     ? weatherData.map((w, i) => `Day ${i + 1} (${w.date}): ${w.min}–${w.max}°C, ${w.condition}`).join("\n")
     : "Weather data unavailable. Using general seasonal guidance.";
 
-  const prompt = `You are an expert travel planner. Create a complete trip plan for ${destination} from ${startDate} to ${endDate} for ${travelers} traveler(s).
+  const prompt = `You are an expert travel planner. Create a DETAILED, STRUCTURED day-by-day trip plan for ${destination} from ${startDate} to ${endDate} for ${travelers} traveler(s).
 
 Budget: $${budgetPerNight}/night for accommodation
 Interests: ${interests.join(", ") || "General travel"}
@@ -50,17 +50,37 @@ Interests: ${interests.join(", ") || "General travel"}
 Weather Forecast:
 ${weatherSummary}
 
+CRITICAL INSTRUCTIONS FOR ITINERARIES:
+- Create DETAILED, REALISTIC day-by-day plans like this Tokyo example:
+  Day 0 – Arrival in Tokyo
+  - Arrive, pick up 7-day JR Pass (activate on Day 4), Pocket Wi-Fi, Suica/Pasmo card
+  - Hotel in Shinjuku, Shibuya or Asakusa (easy access)
+  - Light evening: Walk Shinjuku (Kabukicho, Golden Gai, Godzilla head) or Shibuya Sky at sunset if energy allows
+
+  Day 1 – Modern Tokyo
+  - Morning: Meiji Shrine + Yoyogi Park → Harajuku (Takeshita St & crepes)
+  - Lunch: Vegetarian ramen at T's Tantan (Tokyo Station) or Afuri (Harajuku)
+  - Afternoon: Shibuya (Scramble crossing, Shibuya Sky observatory ~¥2,400)
+  - Evening: TeamLab Borderless (Aomi, Tokyo) or TeamLab Planets (Toyosu) – book weeks ahead!
+  - Dinner: Conveyor-belt sushi or Izakaya in Shibuya/Shinjuku
+
+- Include SPECIFIC times, locations, transportation details, restaurant names, costs, and practical tips
+- Each activity should have: time, title, location, description, transportation (if moving), cost (if applicable), tips/notes
+- Include arrival day (Day 0) with practical setup tasks
+- Include departure day with airport transfer details
+- Make it REALISTIC and ACTIONABLE - not generic placeholders
+
 CRITICAL: Return ONLY valid JSON with no comments, no markdown, no extra text. The JSON must be parseable.
 
 Return this exact JSON structure:
 {
   "destination": "${destination}",
   "description": "A captivating 2-3 sentence description of ${destination} highlighting its unique charm, culture, and appeal",
-  "inspiration": "3-4 inspiring reasons to visit ${destination}, each in one sentence, focusing on unique experiences",
+  "inspiration": ["Reason 1", "Reason 2", "Reason 3", "Reason 4"],
   "places": [
-    {"name": "Famous Landmark Name", "description": "Brief 1-2 sentence description with historical/cultural context and why it's worth visiting", "type": "landmark"},
-    {"name": "Cultural Site Name", "description": "Brief 1-2 sentence description highlighting cultural significance", "type": "culture"},
-    {"name": "Natural Attraction Name", "description": "Brief 1-2 sentence description of natural beauty and experiences", "type": "nature"}
+    {"name": "Famous Landmark Name", "description": "Brief 1-2 sentence description with historical/cultural context", "type": "landmark", "coordinates": [longitude, latitude]},
+    {"name": "Cultural Site Name", "description": "Brief description", "type": "culture", "coordinates": [longitude, latitude]},
+    {"name": "Natural Attraction Name", "description": "Brief description", "type": "nature", "coordinates": [longitude, latitude]}
   ],
   "dates": {"start": "${startDate}", "end": "${endDate}"},
   "travelers": ${travelers},
@@ -76,21 +96,84 @@ Return this exact JSON structure:
     "luxury": [{"name": "Luxury Hotel", "location": "Prime Location", "priceRange": "$${Math.round(budgetPerNight * 1.5)}-$${Math.round(budgetPerNight * 2)}", "rating": 4.8, "link": "${bookingLuxuryLink}"}]
   },
   "itineraries": {
-    "economic": ${JSON.stringify(Array.from({ length: numDays }, (_, i) => ({
-      day: i + 1,
-      date: new Date(new Date(startDate).getTime() + i * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      activities: ["Morning: Activity - 9AM - $20", "Afternoon: Activity - 2PM - $30", "Evening: Activity - 7PM - $25"]
-    })))},
-    "balanced": ${JSON.stringify(Array.from({ length: numDays }, (_, i) => ({
-      day: i + 1,
-      date: new Date(new Date(startDate).getTime() + i * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      activities: ["Morning: Activity - 9AM - $40", "Afternoon: Activity - 2PM - $50", "Evening: Activity - 7PM - $60"]
-    })))},
-    "luxury": ${JSON.stringify(Array.from({ length: numDays }, (_, i) => ({
-      day: i + 1,
-      date: new Date(new Date(startDate).getTime() + i * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      activities: ["Morning: Activity - 9AM - $80", "Afternoon: Activity - 2PM - $100", "Evening: Activity - 7PM - $120"]
-    })))}
+    "economic": [
+      {
+        "day": 0,
+        "date": "${startDate}",
+        "title": "Arrival in ${destination}",
+        "activities": [
+          {
+            "time": "Arrival",
+            "title": "Arrive and setup",
+            "location": "Airport → Hotel",
+            "description": "Arrive, pick up local transport pass/card, SIM/Wi-Fi, check into hotel",
+            "transportation": "Airport transfer",
+            "cost": "$${Math.round(budgetPerNight * 0.3)}",
+            "tips": "Book airport transfer in advance"
+          },
+          {
+            "time": "Evening",
+            "title": "Light exploration",
+            "location": "Hotel area",
+            "description": "Walk around hotel neighborhood, get oriented, light dinner",
+            "transportation": "Walking",
+            "cost": "$${Math.round(budgetPerNight * 0.2)}"
+          }
+        ]
+      }
+    ],
+    "balanced": [
+      {
+        "day": 0,
+        "date": "${startDate}",
+        "title": "Arrival in ${destination}",
+        "activities": [
+          {
+            "time": "Arrival",
+            "title": "Arrive and setup",
+            "location": "Airport → Hotel",
+            "description": "Arrive, pick up local transport pass/card, SIM/Wi-Fi, check into hotel",
+            "transportation": "Airport transfer",
+            "cost": "$${Math.round(budgetPerNight * 0.4)}",
+            "tips": "Book airport transfer in advance"
+          },
+          {
+            "time": "Evening",
+            "title": "Light exploration",
+            "location": "Hotel area",
+            "description": "Walk around hotel neighborhood, get oriented, light dinner",
+            "transportation": "Walking",
+            "cost": "$${Math.round(budgetPerNight * 0.3)}"
+          }
+        ]
+      }
+    ],
+    "luxury": [
+      {
+        "day": 0,
+        "date": "${startDate}",
+        "title": "Arrival in ${destination}",
+        "activities": [
+          {
+            "time": "Arrival",
+            "title": "Arrive and setup",
+            "location": "Airport → Hotel",
+            "description": "Arrive, pick up local transport pass/card, SIM/Wi-Fi, check into hotel",
+            "transportation": "Private transfer",
+            "cost": "$${Math.round(budgetPerNight * 0.6)}",
+            "tips": "Book private transfer in advance"
+          },
+          {
+            "time": "Evening",
+            "title": "Light exploration",
+            "location": "Hotel area",
+            "description": "Walk around hotel neighborhood, get oriented, fine dinner",
+            "transportation": "Walking/Taxi",
+            "cost": "$${Math.round(budgetPerNight * 0.5)}"
+          }
+        ]
+      }
+    ]
   },
   "costs": {
     "economic": {"perPerson": "$800-1200", "total": "$${800 * travelers}-$${1200 * travelers}"},
@@ -102,12 +185,14 @@ Return this exact JSON structure:
 IMPORTANT RULES:
 1. Return ONLY the JSON object, nothing else
 2. No trailing commas in arrays or objects
-3. All strings must be properly escaped
-4. Fill all ${numDays} days for each itinerary
-5. Keep activities concise (one line each)
-6. Weather-aware: suggest indoor alternatives if rain is forecasted
-7. Use realistic prices and airline names
-8. Make hotel names and locations specific to ${destination}
+3. All strings must be properly escaped (use \\n for newlines in descriptions)
+4. Create ${numDays + 1} days total (Day 0 for arrival + ${numDays} full days)
+5. Each day must have a "title" field (e.g., "Modern Tokyo", "Traditional & Pop Tokyo")
+6. Each activity must have: time, title, location, description, transportation (optional), cost (optional), tips (optional)
+7. Include SPECIFIC restaurant names, attraction names, transportation methods, and practical tips
+8. Weather-aware: suggest indoor alternatives if rain is forecasted
+9. Make it REALISTIC - use actual place names, realistic times, and practical advice
+10. Include departure day with airport transfer details
 
 Return the JSON now:`;
 
@@ -128,7 +213,7 @@ Return the JSON now:`;
       model: openai("gpt-4o-mini"),
       prompt,
       temperature: 0.7,
-      maxTokens: 3000, // Increased for more complete responses
+      maxTokens: 6000, // Increased significantly for detailed itineraries
     });
     
     // Restore original key

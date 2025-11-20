@@ -52,6 +52,23 @@ export default function BookingIframes({
     }
   };
 
+  const handleIframeLoad = useCallback((type: "flights" | "hotels") => {
+    if (type === "flights") {
+      setFlightsLoaded(true);
+    } else {
+      setHotelsLoaded(true);
+    }
+  }, []);
+
+  const handleIframeError = useCallback((type: "flights" | "hotels") => {
+    setIframeError(prev => ({ ...prev, [type]: true }));
+    if (type === "flights") {
+      setFlightsLoaded(true); // Hide loading even on error
+    } else {
+      setHotelsLoaded(true);
+    }
+  }, []);
+
   useEffect(() => {
     // Reset loaded state when tab changes
     if (activeTab === "flights") {
@@ -110,23 +127,6 @@ export default function BookingIframes({
       clearTimeout(hotelsTimer);
     };
   }, [activeTab, flightsLoaded, hotelsLoaded, iframeError.flights, iframeError.hotels, hotelTier, handleIframeLoad, handleIframeError]);
-
-  const handleIframeLoad = useCallback((type: "flights" | "hotels") => {
-    if (type === "flights") {
-      setFlightsLoaded(true);
-    } else {
-      setHotelsLoaded(true);
-    }
-  }, []);
-
-  const handleIframeError = useCallback((type: "flights" | "hotels") => {
-    setIframeError(prev => ({ ...prev, [type]: true }));
-    if (type === "flights") {
-      setFlightsLoaded(true); // Hide loading even on error
-    } else {
-      setHotelsLoaded(true);
-    }
-  }, []);
 
   return (
     <>

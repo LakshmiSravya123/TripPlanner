@@ -42,7 +42,7 @@ export async function generateTripPlan(formData: TripFormData) {
     ? weatherData.map((w, i) => `Day ${i + 1} (${w.date}): ${w.min}–${w.max}°C, ${w.condition}`).join("\n")
     : "Weather data unavailable. Using general seasonal guidance.";
 
-  const prompt = `You are an expert travel planner. Create a DETAILED, STRUCTURED day-by-day trip plan for ${destination} from ${startDate} to ${endDate} for ${travelers} traveler(s).
+  const prompt = `You are an expert travel planner. Create a HYPER-DETAILED 7-day travel itinerary for ${destination} starting ${startDate} for ${travelers} ${travelers === 1 ? 'adult' : 'adults'}${interests.includes('vegetarian') || interests.includes('vegan') ? ', vegetarian' : ''}.
 
 Budget: $${budgetPerNight}/night for accommodation
 Interests: ${interests.join(", ") || "General travel"}
@@ -50,35 +50,68 @@ Interests: ${interests.join(", ") || "General travel"}
 Weather Forecast:
 ${weatherSummary}
 
-CRITICAL INSTRUCTIONS FOR ITINERARIES:
-- Create DETAILED, REALISTIC day-by-day plans like this Tokyo example:
-  Day 0 – Arrival in Tokyo
-  - Arrive, pick up 7-day JR Pass (activate on Day 4), Pocket Wi-Fi, Suica/Pasmo card
-  - Hotel in Shinjuku, Shibuya or Asakusa (easy access)
-  - Light evening: Walk Shinjuku (Kabukicho, Golden Gai, Godzilla head) or Shibuya Sky at sunset if energy allows
+CRITICAL STRUCTURE - Follow this EXACT format:
 
-  Day 1 – Modern Tokyo
-  - Morning: Meiji Shrine + Yoyogi Park → Harajuku (Takeshita St & crepes)
-  - Lunch: Vegetarian ramen at T's Tantan (Tokyo Station) or Afuri (Harajuku)
-  - Afternoon: Shibuya (Scramble crossing, Shibuya Sky observatory ~¥2,400)
-  - Evening: TeamLab Borderless (Aomi, Tokyo) or TeamLab Planets (Toyosu) – book weeks ahead!
-  - Dinner: Conveyor-belt sushi or Izakaya in Shibuya/Shinjuku
+1. OVERVIEW SECTION:
+   - Total budget breakdown (accommodation, food, transport, activities)
+   - Transport pass recommendations (e.g., "7-day JR Pass - activate on Day X", "City pass", etc.)
+   - Key practical info (currency, tipping, SIM/Wi-Fi, etc.)
 
-- Include SPECIFIC times, locations, transportation details, restaurant names, costs, and practical tips
-- Each activity should have: time, title, location, description, transportation (if moving), cost (if applicable), tips/notes
-- Include arrival day (Day 0) with practical setup tasks
+2. DAY-BY-DAY ITINERARY:
+   Format each day as:
+   Day X – [Theme/Title] (Date: YYYY-MM-DD)
+   
+   [Time, e.g., 7:00] [Activity Title]
+   - Location: [Specific address/area]
+   - Description: [Detailed 2-3 sentence description]
+   - Transport: [How to get there, e.g., "Shinkansen Tokyo → Odawara (35 min, ¥3,000)"]
+   - Cost: [Specific price, e.g., "¥2,400" or "$50"]
+   - Link: [Booking link if applicable]
+   - Tips: [Practical advice, e.g., "Book weeks ahead!", "Go early to avoid crowds"]
+   
+   [Time, e.g., 12:00] [Lunch/Activity]
+   - [Same structure]
+   
+   Daily Total: [Transport + Activities + Food = $X]
+
+3. TIPS SECTION:
+   - Booking recommendations
+   - Best times to visit attractions
+   - Money-saving tips
+   - Cultural notes
+   - Current events/seasonal considerations
+
+REQUIREMENTS:
+- Include Day 0 (Arrival) with airport transfer, hotel check-in, transport pass pickup
 - Include departure day with airport transfer details
-- Make it REALISTIC and ACTIONABLE - not generic placeholders
+- Every activity MUST have: time, location, transport method, cost
+- Use REALISTIC prices in local currency
+- Include specific restaurant names and booking links where possible
+- Transportation details must be specific (train lines, duration, cost)
+- NO generic placeholders - use actual place names, restaurant names, costs
+- Weather-aware: suggest indoor alternatives if rain forecasted
+- Keep pacing realistic - don't overpack days
+- Include vegetarian options if relevant
 
 CRITICAL: Return ONLY valid JSON with no comments, no markdown, no extra text. The JSON must be parseable.
 
 Return this exact JSON structure:
 {
   "destination": "${destination}",
-  "description": "A captivating 2-3 sentence description of ${destination} highlighting its unique charm, culture, and appeal",
-  "inspiration": ["Reason 1", "Reason 2", "Reason 3", "Reason 4"],
+  "description": "A brief 1-2 sentence overview of ${destination}",
+  "overview": {
+    "budget": {
+      "accommodation": "$${Math.round(budgetPerNight * numDays)}-$${Math.round(budgetPerNight * 1.2 * numDays)}",
+      "food": "$X-XX per day",
+      "transport": "$X-XX (include pass recommendations)",
+      "activities": "$X-XX",
+      "total": "$X,XXX-XX,XXX"
+    },
+    "transportPass": "Specific pass recommendation (e.g., '7-day JR Pass - activate on Day 4', 'City Tourist Card', etc.)",
+    "practicalInfo": ["Currency: XXX", "Tipping: Info", "SIM/Wi-Fi: Recommendation", "Other practical tips"]
+  },
   "places": [
-    {"name": "Famous Landmark Name", "description": "Brief 1-2 sentence description with historical/cultural context", "type": "landmark", "coordinates": [longitude, latitude]},
+    {"name": "Famous Landmark Name", "description": "Brief description", "type": "landmark", "coordinates": [longitude, latitude]},
     {"name": "Cultural Site Name", "description": "Brief description", "type": "culture", "coordinates": [longitude, latitude]},
     {"name": "Natural Attraction Name", "description": "Brief description", "type": "nature", "coordinates": [longitude, latitude]}
   ],
@@ -96,85 +129,17 @@ Return this exact JSON structure:
     "luxury": [{"name": "Luxury Hotel", "location": "Prime Location", "priceRange": "$${Math.round(budgetPerNight * 1.5)}-$${Math.round(budgetPerNight * 2)}", "rating": 4.8, "link": "${bookingLuxuryLink}"}]
   },
   "itineraries": {
-    "economic": [
-      {
-        "day": 0,
-        "date": "${startDate}",
-        "title": "Arrival in ${destination}",
-        "activities": [
-          {
-            "time": "Arrival",
-            "title": "Arrive and setup",
-            "location": "Airport → Hotel",
-            "description": "Arrive, pick up local transport pass/card, SIM/Wi-Fi, check into hotel",
-            "transportation": "Airport transfer",
-            "cost": "$${Math.round(budgetPerNight * 0.3)}",
-            "tips": "Book airport transfer in advance"
-          },
-          {
-            "time": "Evening",
-            "title": "Light exploration",
-            "location": "Hotel area",
-            "description": "Walk around hotel neighborhood, get oriented, light dinner",
-            "transportation": "Walking",
-            "cost": "$${Math.round(budgetPerNight * 0.2)}"
-          }
-        ]
-      }
-    ],
-    "balanced": [
-      {
-        "day": 0,
-        "date": "${startDate}",
-        "title": "Arrival in ${destination}",
-        "activities": [
-          {
-            "time": "Arrival",
-            "title": "Arrive and setup",
-            "location": "Airport → Hotel",
-            "description": "Arrive, pick up local transport pass/card, SIM/Wi-Fi, check into hotel",
-            "transportation": "Airport transfer",
-            "cost": "$${Math.round(budgetPerNight * 0.4)}",
-            "tips": "Book airport transfer in advance"
-          },
-          {
-            "time": "Evening",
-            "title": "Light exploration",
-            "location": "Hotel area",
-            "description": "Walk around hotel neighborhood, get oriented, light dinner",
-            "transportation": "Walking",
-            "cost": "$${Math.round(budgetPerNight * 0.3)}"
-          }
-        ]
-      }
-    ],
-    "luxury": [
-      {
-        "day": 0,
-        "date": "${startDate}",
-        "title": "Arrival in ${destination}",
-        "activities": [
-          {
-            "time": "Arrival",
-            "title": "Arrive and setup",
-            "location": "Airport → Hotel",
-            "description": "Arrive, pick up local transport pass/card, SIM/Wi-Fi, check into hotel",
-            "transportation": "Private transfer",
-            "cost": "$${Math.round(budgetPerNight * 0.6)}",
-            "tips": "Book private transfer in advance"
-          },
-          {
-            "time": "Evening",
-            "title": "Light exploration",
-            "location": "Hotel area",
-            "description": "Walk around hotel neighborhood, get oriented, fine dinner",
-            "transportation": "Walking/Taxi",
-            "cost": "$${Math.round(budgetPerNight * 0.5)}"
-          }
-        ]
-      }
-    ]
+    "economic": [],
+    "balanced": [],
+    "luxury": []
   },
+  "tips": [
+    "Booking recommendation 1",
+    "Best times to visit tip",
+    "Money-saving tip",
+    "Cultural note",
+    "Current event/seasonal consideration"
+  ],
   "costs": {
     "economic": {"perPerson": "$800-1200", "total": "$${800 * travelers}-$${1200 * travelers}"},
     "balanced": {"perPerson": "$1200-1800", "total": "$${1200 * travelers}-$${1800 * travelers}"},
@@ -183,16 +148,21 @@ Return this exact JSON structure:
 }
 
 IMPORTANT RULES:
-1. Return ONLY the JSON object, nothing else
+1. Return ONLY the JSON object, nothing else - NO markdown, NO extra text
 2. No trailing commas in arrays or objects
 3. All strings must be properly escaped (use \\n for newlines in descriptions)
-4. Create ${numDays + 1} days total (Day 0 for arrival + ${numDays} full days)
-5. Each day must have a "title" field (e.g., "Modern Tokyo", "Traditional & Pop Tokyo")
-6. Each activity must have: time, title, location, description, transportation (optional), cost (optional), tips (optional)
-7. Include SPECIFIC restaurant names, attraction names, transportation methods, and practical tips
-8. Weather-aware: suggest indoor alternatives if rain is forecasted
-9. Make it REALISTIC - use actual place names, realistic times, and practical advice
-10. Include departure day with airport transfer details
+4. Create ${numDays + 1} days total (Day 0 for arrival + ${numDays} full days) for EACH itinerary tier (economic, balanced, luxury)
+5. Each day must have: day (number), date (YYYY-MM-DD), title (e.g., "Modern Tokyo", "Traditional & Pop Tokyo"), activities (array)
+6. Each activity MUST have: time (e.g., "7:00", "Morning", "12:00"), title, location, description, transportation (specific method with duration/cost), cost (in local currency), tips (optional)
+7. Include "dailyTotal" field for each day showing transport + activities + food costs
+8. Use REALISTIC prices in local currency (research current prices)
+9. Include specific restaurant names, booking links, attraction names
+10. Transportation must be specific: "Shinkansen Tokyo → Odawara (35 min, ¥3,000)" not just "train"
+11. Weather-aware: suggest indoor alternatives if rain is forecasted
+12. Keep pacing realistic - 3-5 activities per day max
+13. Include vegetarian options if interests include vegetarian/vegan
+14. NO "inspiration" or "why visit" sections - focus on actionable itinerary only
+15. Overview section must include realistic budget breakdown and transport pass recommendations
 
 Return the JSON now:`;
 
@@ -326,9 +296,25 @@ Return the JSON now:`;
             luxury: Array.from({ length: numDays }, (_, i) => ({
               day: i + 1,
               date: new Date(new Date(startDate).getTime() + i * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-              activities: ["Morning: Private tour - 9AM - $80", "Afternoon: Exclusive experience - 2PM - $100", "Evening: Premium dining - 7PM - $120"],
+              title: `Day ${i + 1}`,
+              activities: [
+                {
+                  time: "9:00",
+                  title: "Private tour",
+                  location: "City center",
+                  description: "Exclusive private guided experience",
+                  transportation: "Private car",
+                  cost: "$80",
+                  tips: "Book in advance"
+                }
+              ],
+              dailyTotal: "$200-300"
             })),
           },
+          tips: [
+            "Book popular attractions in advance",
+            "Check current events and seasonal considerations"
+          ],
           costs: {
             economic: { perPerson: "$800-1200", total: `$${800 * travelers}-$${1200 * travelers}` },
             balanced: { perPerson: "$1200-1800", total: `$${1200 * travelers}-$${1800 * travelers}` },
@@ -367,14 +353,28 @@ Return the JSON now:`;
         });
       }
       
-      // Ensure inspiration is an array
-      if (result.inspiration && typeof result.inspiration === "string") {
-        result.inspiration = result.inspiration.split("\n").filter((line: string) => line.trim());
-      } else if (!result.inspiration) {
-        result.inspiration = [
-          `Discover the rich culture and history of ${destination}`,
-          `Experience world-class cuisine and local flavors`,
-          `Explore stunning architecture and iconic landmarks`,
+      // Ensure overview exists
+      if (!result.overview) {
+        result.overview = {
+          budget: {
+            accommodation: `$${Math.round(budgetPerNight * numDays)}-$${Math.round(budgetPerNight * 1.2 * numDays)}`,
+            food: "$50-100 per day",
+            transport: "$100-200",
+            activities: "$200-400",
+            total: `$${Math.round((budgetPerNight * numDays + 350) * travelers)}-$${Math.round((budgetPerNight * 1.2 * numDays + 700) * travelers)}`
+          },
+          transportPass: "Check local transport pass options",
+          practicalInfo: ["Currency: Check local currency", "Tipping: Check local customs", "SIM/Wi-Fi: Available at airport"]
+        };
+      }
+
+      // Ensure tips array exists
+      if (!result.tips || !Array.isArray(result.tips)) {
+        result.tips = [
+          "Book popular attractions in advance",
+          "Check current events and seasonal considerations",
+          "Carry local currency for small purchases",
+          "Download offline maps and translation apps"
         ];
       }
       

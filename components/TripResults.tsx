@@ -195,15 +195,17 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
             >
-              <TripOverview
-                destination={data.destination}
-                dates={data.dates}
-                travelers={data.travelers}
-                flights={data.flights}
-                hotels={data.hotels}
-                costs={data.costs}
-                description={data.description}
-              />
+                      <TripOverview
+                        destination={data.destination}
+                        dates={data.dates}
+                        travelers={data.travelers}
+                        flights={data.flights}
+                        hotels={data.hotels}
+                        costs={data.costs}
+                        description={data.description}
+                        overview={data.overview}
+                        tips={data.tips}
+                      />
             </motion.div>
 
             {/* Enhanced Destination Map */}
@@ -371,15 +373,17 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
                 >
-                  <TripOverview
-                    destination={data.destination}
-                    dates={data.dates}
-                    travelers={data.travelers}
-                    flights={data.flights}
-                    hotels={data.hotels}
-                    costs={data.costs}
-                    description={data.description}
-                  />
+                      <TripOverview
+                        destination={data.destination}
+                        dates={data.dates}
+                        travelers={data.travelers}
+                        flights={data.flights}
+                        hotels={data.hotels}
+                        costs={data.costs}
+                        description={data.description}
+                        overview={data.overview}
+                        tips={data.tips}
+                      />
                 </motion.div>
 
                 {/* Enhanced Destination Map */}

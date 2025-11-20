@@ -7,9 +7,9 @@ import { motion } from "framer-motion";
 
 interface ItineraryTabsProps {
   itineraries: {
-    economic: Array<{ day: number; date: string; title?: string; activities: any[] }>;
-    balanced: Array<{ day: number; date: string; title?: string; activities: any[] }>;
-    luxury: Array<{ day: number; date: string; title?: string; activities: any[] }>;
+    economic: Array<{ day: number; date: string; title?: string; activities: any[]; dailyTotal?: string }>;
+    balanced: Array<{ day: number; date: string; title?: string; activities: any[]; dailyTotal?: string }>;
+    luxury: Array<{ day: number; date: string; title?: string; activities: any[]; dailyTotal?: string }>;
   };
   activeTab: "economic" | "balanced" | "luxury";
   onTabChange: (tab: "economic" | "balanced" | "luxury") => void;
@@ -74,10 +74,17 @@ export default function ItineraryTabs({
               transition={{ delay: idx * 0.1 }}
               className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6"
             >
-              <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
-                Day {day.day} {day.title && `– ${day.title}`}
-                {day.date && <span className="text-sm font-normal text-gray-600 ml-2">({day.date})</span>}
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  Day {day.day} {day.title && `– ${day.title}`}
+                  {day.date && <span className="text-sm font-normal text-gray-600 ml-2">({day.date})</span>}
+                </h3>
+                {day.dailyTotal && (
+                  <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
+                    Daily Total: {day.dailyTotal}
+                  </div>
+                )}
+              </div>
               <ul className="space-y-4">
                 {day.activities.map((activity, actIdx) => {
                   // Handle both old format (string) and new format (object)

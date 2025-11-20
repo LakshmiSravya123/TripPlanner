@@ -33,7 +33,9 @@ export default function DestinationMap({ destination }: DestinationMapProps) {
   useEffect(() => {
     setIsClient(true);
     // Import leaflet CSS only on client
-    import("leaflet/dist/leaflet.css");
+    if (typeof window !== "undefined") {
+      require("leaflet/dist/leaflet.css");
+    }
     
     // Fix for default marker icons
     if (typeof window !== "undefined") {

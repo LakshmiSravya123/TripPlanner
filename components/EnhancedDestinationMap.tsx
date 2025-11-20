@@ -44,7 +44,9 @@ export default function EnhancedDestinationMap({ destination, places, descriptio
 
   useEffect(() => {
     setIsClient(true);
-    import("leaflet/dist/leaflet.css");
+    if (typeof window !== "undefined") {
+      require("leaflet/dist/leaflet.css");
+    }
     
     if (typeof window !== "undefined") {
       const L = require("leaflet");

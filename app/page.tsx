@@ -56,7 +56,7 @@ export default function Home() {
   if (tripData) {
     return (
       <>
-        {showConfetti && (
+        {showConfetti && typeof window !== "undefined" && (
           <Confetti
             width={window.innerWidth}
             height={window.innerHeight}
@@ -74,17 +74,17 @@ export default function Home() {
     <main className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Animated background particles */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(50)].map((_, i) => (
+        {typeof window !== "undefined" && [...Array(50)].map((_, i) => (
           <motion.div
             key={i}
             className="absolute w-1 h-1 bg-purple-400 rounded-full"
             initial={{
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
+              x: Math.random() * (window.innerWidth || 1920),
+              y: Math.random() * (window.innerHeight || 1080),
               opacity: 0,
             }}
             animate={{
-              y: [null, Math.random() * window.innerHeight],
+              y: [null, Math.random() * (window.innerHeight || 1080)],
               opacity: [0, 0.5, 0],
             }}
             transition={{

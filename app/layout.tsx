@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/Toaster";
+import "leaflet/dist/leaflet.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -9,13 +10,18 @@ export const metadata: Metadata = {
   title: "AI Trip Planner - Plan Your Perfect Journey",
   description: "Plan your perfect trip with AI-powered recommendations. Get flights, hotels, activities, and more.",
   manifest: "/manifest.json",
-  themeColor: "#111827",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Trip Planner",
   },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#111827",
 };
 
 export default function RootLayout({

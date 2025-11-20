@@ -76,9 +76,24 @@ export async function generateTripPlan(formData: TripFormData) {
 
   const systemPrompt = `Generate ONLY: Overview (route, budget breakdown, transport pass, embedded Google Flights iframe for sample round-trip & Booking.com iframes for hotels by city/dates). Then Day-by-Day (date header, timed bullets: activity/time/cost ¥/transport note, unique researched details like weather/events/veggie food—no repeats). End with Tips (apps, sustainability). Exclude Why Visit/Map/intros. Update via web_search for current prices/events (e.g., JR Pass ¥50k). Make engaging/realistic.`;
 
+  const exampleItinerary = `EXAMPLE FORMAT (follow this EXACTLY):
+
+Overview:
+Route: Tokyo (Days 1–3) → Hakone/Mt. Fuji (Day 4) → Kyoto (Days 5–6) → Nara/Osaka (Day 7).
+Transport: 7-day JR Pass (~¥50,000/person; activate Day 4). Suica card for local (~¥3,000 load).
+Budget Breakdown: Transport ¥60,000; Food ¥40,000; Entries ¥15,000; Misc ¥20,000 (per person).
+
+Day 1: Fri, Nov 21 – Tokyo Arrival & Urban Buzz
+9AM–12PM: Settle in Shinjuku; stroll Kabukicho (free, Godzilla statue photo-op).
+1–5PM: Meiji Shrine & Harajuku (free; autumn ginkgo leaves). Lunch: Vegetarian tonkatsu at Ain Soph (¥1,500).
+6–9PM: Shibuya Crossing + Sky Deck (¥2,400; sunset views). Dinner: Veggie ramen at Ichiran (¥1,200).
+Transport: Airport train (~¥1,200). Daily Total: ¥6,300.`;
+
   const prompt = `You are an expert travel planner. ${systemPrompt}
 
 Create a HYPER-DETAILED travel itinerary for ${destination} starting ${startDate} for ${groupDescription}.
+
+${exampleItinerary}
 
 Budget: ${budgetDescription}
 Interests: ${interests.join(", ") || "General travel"}
@@ -89,6 +104,9 @@ ${weatherSummary}
 ${jrPassInfo ? `Current Transport Info: ${jrPassInfo}\n` : ''}
 ${currentEvents ? `Current Events: ${currentEvents}\n` : ''}
 ${currentPrices ? `Current Prices: ${currentPrices}\n` : ''}
+
+CRITICAL: You MUST generate REAL, SPECIFIC content. NO generic placeholders like "Guided tour - 9AM - $40". 
+Instead use: "9AM–12PM: Senso-ji Temple, Asakusa (free; early for Shichi-Go-San kimono sightings). Lunch: Shojin vegan bento at Torikyu (¥1,800)."
 
 CRITICAL STRUCTURE - Follow this EXACT format:
 
@@ -192,17 +210,19 @@ IMPORTANT RULES:
 2. No trailing commas in arrays or objects
 3. All strings must be properly escaped (use \\n for newlines in descriptions)
 4. Create ${numDays + 1} days total (Day 0 for arrival + ${numDays} full days) for EACH itinerary tier (economic, balanced, luxury)
-5. Each day must have: day (number), date (YYYY-MM-DD), title (e.g., "Modern Tokyo", "Traditional & Pop Tokyo"), activities (array)
-6. Each activity MUST have: time (e.g., "7:00", "Morning", "12:00"), title, location, description, transportation (specific method with duration/cost), cost (in local currency), tips (optional)
-7. Include "dailyTotal" field for each day showing transport + activities + food costs
-8. Use REALISTIC prices in local currency (research current prices)
-9. Include specific restaurant names, booking links, attraction names
-10. Transportation must be specific: "Shinkansen Tokyo → Odawara (35 min, ¥3,000)" not just "train"
-11. Weather-aware: suggest indoor alternatives if rain is forecasted
-12. Keep pacing realistic - 3-5 activities per day max
-13. Include vegetarian options if interests include vegetarian/vegan
+5. Each day must have: day (number), date (YYYY-MM-DD), title (e.g., "Tokyo Arrival & Urban Buzz", "Historic Tokyo"), activities (array)
+6. Each activity MUST have: time (e.g., "9AM–12PM", "1–5PM"), title, location, description, transportation (specific method with duration/cost), cost (in local currency like ¥1,500 or $50), tips (optional)
+7. Include "dailyTotal" field for each day showing transport + activities + food costs in local currency
+8. Use REALISTIC prices in local currency - research actual current prices (e.g., ¥2,400 for Shibuya Sky, ¥1,500 for lunch)
+9. Include specific restaurant names (e.g., "Ain Soph", "Ichiran", "Torikyu"), actual attraction names, real locations
+10. Transportation must be specific: "Shinkansen Tokyo → Odawara (35 min, ¥3,000)" or "Airport train (~¥1,200)" not just "train"
+11. Weather-aware: suggest indoor alternatives if rain forecasted (e.g., "Alt: Rainy? Swap for indoor Sumida Aquarium (¥2,300)")
+12. Keep pacing realistic - 3-5 activities per day max with specific time ranges
+13. Include vegetarian options if interests include vegetarian/vegan - name specific restaurants
 14. NO "inspiration" or "why visit" sections - focus on actionable itinerary only
-15. Overview section must include realistic budget breakdown and transport pass recommendations
+15. Overview section must include: route (city progression), transport pass details with costs, budget breakdown in local currency
+16. ABSOLUTELY NO GENERIC PLACEHOLDERS - every activity must have real names, real prices, real times
+17. Format activities like the example: "9AM–12PM: [Activity] ([cost]; [details]). [Next activity] ([cost])."
 
 Return the JSON now:`;
 
@@ -239,18 +259,21 @@ Return the JSON now:`;
     });
     
     // If response is too generic, retry with chain-of-thought
-    if (text.includes("generic") || text.length < 500 || !text.includes("activities")) {
+    if (text.includes("generic") || text.length < 1000 || !text.includes("activities") || text.includes("Guided tour") || text.includes("Cultural experience")) {
       console.log("Response seems generic, retrying with chain-of-thought...");
       const chainOfThoughtPrompt = `${prompt}
 
-CHAIN-OF-THOUGHT REASONING REQUIRED:
-1. What specific attractions exist in ${destination}? List 5-10 unique places.
-2. What are current prices for transport passes? (e.g., JR Pass for Japan)
-3. What are typical meal costs in local currency?
-4. What are the best vegetarian restaurants in ${destination}?
-5. What are current events or seasonal considerations?
-6. How do I get from the airport to the city center? Specific route and cost.
-7. What are the opening hours and costs for major attractions?
+CHAIN-OF-THOUGHT REASONING REQUIRED - BE SPECIFIC:
+1. List 10+ specific attractions in ${destination} with exact names and current entry costs
+2. List 5+ specific vegetarian restaurants in ${destination} with names and typical meal costs
+3. What are current prices for transport passes? (e.g., JR Pass ¥50,000 for Japan, activate Day X)
+4. What is the exact route progression? (e.g., "Tokyo (Days 1–3) → Hakone (Day 4) → Kyoto (Days 5–6)")
+5. For each day, provide 3-5 activities with EXACT times (e.g., "9AM–12PM"), locations, costs in local currency
+6. Include specific transportation details: "Shinkansen Tokyo → Odawara (35 min, ¥3,000)" not "train"
+7. Calculate daily totals: Transport + Activities + Food = total in local currency
+
+CRITICAL: Generate REAL content. If you see "Guided tour - 9AM - $40", that's WRONG. 
+Instead use: "9AM–12PM: Senso-ji Temple, Asakusa (free; early for Shichi-Go-San kimono sightings). Lunch: Shojin vegan bento at Torikyu (¥1,800)."
 
 Now generate the detailed itinerary with these specific details:`;
 
@@ -258,7 +281,7 @@ Now generate the detailed itinerary with these specific details:`;
         model: openai("gpt-4o-mini"),
         prompt: chainOfThoughtPrompt,
         temperature: 0.7,
-        maxTokens: 6000,
+        maxTokens: 8000, // Increased for more detailed content
       });
       text = retryResult.text;
     }

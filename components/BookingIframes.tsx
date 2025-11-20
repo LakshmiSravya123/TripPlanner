@@ -84,13 +84,21 @@ export default function BookingIframes({
             </TabsList>
 
             <TabsContent value="flights" className="m-0 p-0">
-              <div className="h-[600px] w-full relative">
+              <div className="h-[700px] w-full relative bg-gray-50 rounded-b-lg overflow-hidden">
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+                  <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading Google Flights...</p>
+                  </div>
+                </div>
                 <iframe
                   src={flightsLink}
-                  className="w-full h-full border-0"
+                  className="w-full h-full border-0 rounded-b-lg relative z-10"
                   title="Google Flights"
                   allow="fullscreen"
+                  allowFullScreen
                   loading="lazy"
+                  sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
                 />
               </div>
             </TabsContent>
@@ -124,13 +132,21 @@ export default function BookingIframes({
                   </Button>
                 </div>
               </div>
-              <div className="h-[600px] w-full relative">
+              <div className="h-[700px] w-full relative bg-gray-50 rounded-b-lg overflow-hidden">
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+                  <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading Booking.com...</p>
+                  </div>
+                </div>
                 <iframe
                   src={getHotelLink()}
-                  className="w-full h-full border-0"
+                  className="w-full h-full border-0 rounded-b-lg relative z-10"
                   title="Booking.com Hotels"
                   allow="fullscreen"
+                  allowFullScreen
                   loading="lazy"
+                  sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
                 />
               </div>
             </TabsContent>

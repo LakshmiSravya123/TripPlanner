@@ -21,19 +21,48 @@ const interests = [
 ];
 
 export default function MagicalForm({ onSubmit, loading }: MagicalFormProps) {
-  const [destination, setDestination] = useState("");
+  // Set default to Croatia
+  const [destination, setDestination] = useState("Croatia");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [travelers, setTravelers] = useState(2);
   const [budget, setBudget] = useState(200);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [hoveredInterest, setHoveredInterest] = useState<string | null>(null);
+  const [openaiKey, setOpenaiKey] = useState("");
+  
+  // Set default dates (tomorrow + 7 days)
+  useEffect(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const weekLater = new Date(tomorrow);
+    weekLater.setDate(weekLater.getDate() + 7);
+    
+    if (!startDate) {
+      setStartDate(tomorrow.toISOString().split("T")[0]);
+    }
+    if (!endDate) {
+      setEndDate(weekLater.toISOString().split("T")[0]);
+    }
+    
+    // Load OpenAI key from localStorage if exists
+    const savedKey = localStorage.getItem("openai_api_key");
+    if (savedKey) {
+      setOpenaiKey(savedKey);
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!startDate || !endDate || !destination) {
       return;
     }
+    
+    // Save OpenAI key to localStorage
+    if (openaiKey) {
+      localStorage.setItem("openai_api_key", openaiKey);
+    }
+    
     onSubmit({
       destination,
       startDate,
@@ -41,6 +70,7 @@ export default function MagicalForm({ onSubmit, loading }: MagicalFormProps) {
       travelers,
       budgetPerNight: budget,
       interests: selectedInterests,
+      openaiKey: openaiKey || undefined,
     });
   };
 
@@ -283,6 +313,35 @@ export default function MagicalForm({ onSubmit, loading }: MagicalFormProps) {
             })}
           </AnimatePresence>
         </div>
+      </motion.div>
+
+      {/* OpenAI API Key - Optional */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.65 }}
+      >
+        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+          <Sparkles className="w-5 h-5 text-purple-600" />
+          OpenAI API Key <span className="text-xs text-gray-500 font-normal">(optional - saved locally)</span>
+        </label>
+        <motion.div
+          className="relative"
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-2xl blur-xl" />
+          <input
+            type="password"
+            value={openaiKey}
+            onChange={(e) => setOpenaiKey(e.target.value)}
+            className="relative w-full px-6 py-4 rounded-2xl border-2 border-purple-200/50 bg-white/80 backdrop-blur-xl focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-200/50 transition-all text-sm font-mono"
+            placeholder="sk-... (optional - will use server key if not provided)"
+          />
+          <p className="text-xs text-gray-500 mt-2 ml-2">
+            Your key is stored locally and never sent to our servers. Leave empty to use default.
+          </p>
+        </motion.div>
       </motion.div>
 
       {/* Submit Button - Liquid Metal */}

@@ -5,14 +5,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+import { getAirportCode } from "./airports";
+
 export function buildGoogleFlightsLink(
   destination: string,
   startDate: string,
   endDate: string,
-  origin: string = "NYC"
+  origin: string = "NYC",
+  travelers: number = 1
 ): string {
-  const destEncoded = encodeURIComponent(destination);
-  return `https://www.google.com/travel/flights?q=Flights%20to%20${destEncoded}%20from%20${origin}%20on%20${startDate}%20through%20${endDate}`;
+  const destCode = getAirportCode(destination);
+  // Google Flights URL format: https://www.google.com/travel/flights?q=Flights%20from%20JFK%20to%20ZAG%20on%202025-06-15%20through%202025-06-20
+  return `https://www.google.com/travel/flights?q=Flights%20from%20${origin}%20to%20${destCode}%20on%20${startDate}%20through%20${endDate}&num=${travelers}`;
 }
 
 export function buildBookingLink(
@@ -23,7 +27,8 @@ export function buildBookingLink(
   maxPrice?: number
 ): string {
   const destEncoded = encodeURIComponent(destination);
-  let url = `https://www.booking.com/searchresults.html?ss=${destEncoded}&checkin=${checkin}&checkout=${checkout}&group_adults=${adults}`;
+  // Booking.com URL format with proper parameters
+  let url = `https://www.booking.com/searchresults.html?ss=${destEncoded}&checkin=${checkin}&checkout=${checkout}&group_adults=${adults}&no_rooms=1&group_children=0`;
   if (maxPrice) {
     url += `&price=USD-${maxPrice}`;
   }

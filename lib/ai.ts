@@ -11,6 +11,7 @@ export interface TripFormData {
   travelers: number;
   budgetPerNight: number;
   interests: string[];
+  openaiKey?: string;
 }
 
 export async function generateTripPlan(formData: TripFormData) {
@@ -110,17 +111,30 @@ IMPORTANT RULES:
 
 Return the JSON now:`;
 
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY is not set");
+  // Use provided key or fallback to environment variable
+  const apiKey = formData.openaiKey || process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not set. Please provide an API key in the form or set it in environment variables.");
   }
 
   try {
+    // Temporarily set the API key in environment if provided
+    const originalKey = process.env.OPENAI_API_KEY;
+    if (formData.openaiKey) {
+      process.env.OPENAI_API_KEY = formData.openaiKey;
+    }
+    
     const { text } = await generateText({
       model: openai("gpt-4o-mini"),
       prompt,
       temperature: 0.7,
       maxTokens: 3000, // Increased for more complete responses
     });
+    
+    // Restore original key
+    if (formData.openaiKey && originalKey) {
+      process.env.OPENAI_API_KEY = originalKey;
+    }
 
     // Clean and parse JSON response
     let jsonText = text.trim();

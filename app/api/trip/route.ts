@@ -13,14 +13,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Check API key
-    if (!process.env.OPENAI_API_KEY) {
-      console.error("OPENAI_API_KEY is not set");
-      return NextResponse.json(
-        { error: "OpenAI API key is not configured. Please set OPENAI_API_KEY in your environment variables." },
-        { status: 500 }
-      );
-    }
+    // API key will be checked in generateTripPlan (can be from form or env)
     
     console.log("Generating trip plan for:", body.destination);
     const result = await generateTripPlan(body);

@@ -6,7 +6,11 @@ import dynamic from "next/dynamic";
 import TripResults from "@/components/TripResults";
 import MagicalForm from "@/components/magic/MagicalForm";
 import InkRevealText from "@/components/magic/InkRevealText";
-import Globe3D from "@/components/magic/Globe3D";
+// Dynamically import Globe3D to avoid SSR issues with Three.js
+const Globe3D = dynamic(() => import("@/components/magic/Globe3D"), { 
+  ssr: false,
+  loading: () => <div className="w-full h-full flex items-center justify-center"><div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>
+});
 import { Sparkles } from "lucide-react";
 import { useSmoothScroll } from "@/hooks/useSmoothScroll";
 
@@ -33,7 +37,17 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      const result = await response.json();
+      
+      let result;
+      try {
+        result = await response.json();
+      } catch (jsonError) {
+        console.error("Failed to parse response:", jsonError);
+        const text = await response.text();
+        console.error("Response text:", text);
+        throw new Error("Invalid response from server. Please check your API key and try again.");
+      }
+      
       if (response.ok) {
         // Cherry blossom reveal animation
         setTimeout(() => {
@@ -42,12 +56,14 @@ export default function Home() {
           setTimeout(() => setShowConfetti(false), 5000);
         }, 2000);
       } else {
-        console.error("Error:", result.error);
-        alert("Error generating trip plan: " + result.error);
+        console.error("API Error:", result);
+        const errorMessage = result?.error || "Unknown error occurred";
+        alert(`Error generating trip plan: ${errorMessage}\n\nPlease check:\n1. Your OpenAI API key is set correctly\n2. You have API credits available\n3. Your internet connection is stable`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating trip:", error);
-      alert("Failed to generate trip plan. Please try again.");
+      const errorMessage = error?.message || "Network error or server unavailable";
+      alert(`Failed to generate trip plan: ${errorMessage}\n\nPlease check:\n1. Your OpenAI API key is set in .env.local\n2. The dev server is running\n3. Your internet connection is stable`);
     } finally {
       setLoading(false);
     }

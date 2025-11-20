@@ -12,6 +12,14 @@ const nextConfig = {
       },
     ],
   },
+  // Suppress react-three-fiber unstable_act warning
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+    };
+    return config;
+  },
 };
 
 module.exports = nextConfig;

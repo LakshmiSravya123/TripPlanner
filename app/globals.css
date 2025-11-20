@@ -131,6 +131,96 @@
   border: none !important;
 }
 
+/* Mapbox custom markers */
+.custom-marker {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+}
+
+.marker-pulse {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #8b5cf6;
+  opacity: 0.6;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+}
+
+.marker-pin {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.marker-pin span {
+  transform: rotate(45deg);
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* React Flow customizations */
+.react-flow__node {
+  cursor: pointer;
+}
+
+.react-flow__edge-path {
+  stroke-width: 2;
+}
+
+.react-flow__controls {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.react-flow__minimap {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Shimmer animation for loading */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
 /* Leaflet map container fixes */
 .leaflet-container {
   background: #f5f5f5 !important;

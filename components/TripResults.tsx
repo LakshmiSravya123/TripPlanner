@@ -16,7 +16,10 @@ import TripOverview from "./TripOverview";
 import CherryBlossomReveal from "./magic/CherryBlossomReveal";
 import ButterflyConfetti from "./magic/ButterflyConfetti";
 import AIChat from "./magic/AIChat";
+import SidebarAIChat from "./magic/SidebarAIChat";
 import BookingIframes from "./BookingIframes";
+import ItineraryFlowchart from "./itinerary/ItineraryFlowchart";
+import InteractiveMapFlowchart from "./map/InteractiveMapFlowchart";
 import { getDestinationImage } from "@/lib/images";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
@@ -72,6 +75,15 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
         />
       )}
       <ButterflyConfetti trigger={showButterflies} />
+      <SidebarAIChat 
+        tripData={data} 
+        onRegenerateDay={(day, content) => {
+          toast.info(`Regenerating Day ${day}...`);
+        }}
+        onRegenerateFull={() => {
+          toast.info("Regenerating full plan...");
+        }}
+      />
       {showCherryBlossom ? (
         <CherryBlossomReveal onComplete={() => setShowCherryBlossom(false)}>
           <div className="min-h-screen relative">
@@ -270,12 +282,36 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
               </motion.div>
             )}
 
-            {/* Itinerary Tabs */}
+            {/* Itinerary Flowchart */}
             {data.itineraries && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
+                className="mb-8"
+              >
+                <div className="bg-white rounded-2xl p-6 shadow-xl border-2 border-purple-200">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Calendar className="w-6 h-6 text-purple-600" />
+                    Your Trip Flowchart
+                  </h2>
+                  <ItineraryFlowchart
+                    itineraries={data.itineraries}
+                    activeTab={activeTab}
+                    onNodeClick={(nodeId) => {
+                      toast.info(`Clicked: ${nodeId}`);
+                    }}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {/* Itinerary Tabs (Detailed View) */}
+            {data.itineraries && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 }}
               >
                 <ItineraryTabs
                   itineraries={data.itineraries}
@@ -447,20 +483,68 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
                   </motion.div>
                 )}
 
-                {/* Itinerary Tabs */}
-                {data.itineraries && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.45 }}
-                  >
-                    <ItineraryTabs
-                      itineraries={data.itineraries}
-                      activeTab={activeTab}
-                      onTabChange={setActiveTab}
-                    />
-                  </motion.div>
-                )}
+                      {/* Interactive Map with Flowchart Overlay */}
+                      {data.places && data.places.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.4 }}
+                          className="mb-8"
+                        >
+                          <InteractiveMapFlowchart
+                            destination={data.destination}
+                            places={data.places.map((p: any) => ({
+                              name: p.name,
+                              coordinates: p.coordinates || [p.lon || 0, p.lat || 0],
+                              type: p.type || "attraction",
+                              description: p.description,
+                            }))}
+                            itinerary={data.itineraries}
+                            onPlaceClick={(place) => {
+                              toast.info(`Selected: ${place.name}`);
+                            }}
+                          />
+                        </motion.div>
+                      )}
+
+                      {/* Itinerary Flowchart */}
+                      {data.itineraries && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.45 }}
+                          className="mb-8"
+                        >
+                          <div className="bg-white rounded-2xl p-6 shadow-xl border-2 border-purple-200">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                              <Calendar className="w-6 h-6 text-purple-600" />
+                              Your Trip Flowchart
+                            </h2>
+                            <ItineraryFlowchart
+                              itineraries={data.itineraries}
+                              activeTab={activeTab}
+                              onNodeClick={(nodeId) => {
+                                toast.info(`Clicked: ${nodeId}`);
+                              }}
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Itinerary Tabs (Fallback/Detailed View) */}
+                      {data.itineraries && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.5 }}
+                        >
+                          <ItineraryTabs
+                            itineraries={data.itineraries}
+                            activeTab={activeTab}
+                            onTabChange={setActiveTab}
+                          />
+                        </motion.div>
+                      )}
 
                 {/* Cost Summary */}
                 {data.costs && (

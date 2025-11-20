@@ -235,7 +235,12 @@ export default function BookingIframes({
                       setTimeout(() => handleIframeLoad("flights"), 2000);
                     }}
                     onError={() => handleIframeError("flights")}
-                    style={{ minHeight: '700px', display: flightsLoaded ? 'block' : 'none' }}
+                    style={{ 
+                      minHeight: '700px', 
+                      display: flightsLoaded ? 'block' : 'none',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                    }}
                   />
                 )}
               </div>
@@ -288,10 +293,14 @@ export default function BookingIframes({
                 </p>
               </div>
               <div className="h-[700px] w-full relative bg-gradient-to-br from-gray-50 to-white rounded-b-lg overflow-hidden border-t-2 border-purple-100" style={{ minHeight: '700px' }}>
-                {/* Loading Overlay */}
+                {/* Shimmer Loading Overlay */}
                 {!hotelsLoaded && !iframeError.hotels && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 z-20">
                     <div className="text-center">
+                      {/* Shimmer effect */}
+                      <div className="relative w-64 h-32 bg-gradient-to-r from-purple-200 via-pink-200 to-purple-200 rounded-lg mb-4 overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div>
+                      </div>
                       <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                       <p className="text-gray-600 font-medium text-lg">Loading Booking.com...</p>
                       <p className="text-sm text-gray-500 mt-2">Searching {hotelTier} hotels in {destination}</p>
@@ -345,7 +354,12 @@ export default function BookingIframes({
                       setTimeout(() => handleIframeLoad("hotels"), 2000);
                     }}
                     onError={() => handleIframeError("hotels")}
-                    style={{ minHeight: '700px', display: hotelsLoaded ? 'block' : 'none' }}
+                    style={{ 
+                      minHeight: '700px', 
+                      display: hotelsLoaded ? 'block' : 'none',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                    }}
                   />
                 )}
               </div>

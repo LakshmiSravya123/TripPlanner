@@ -2,7 +2,7 @@
 
 import { useRef, useMemo, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Stars, Environment } from "@react-three/drei";
+import { OrbitControls, Stars, Environment, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { getCoordinates } from "@/lib/utils";
 
@@ -28,6 +28,12 @@ function Globe({ destination }: { destination?: string }) {
   const destinationMarkerRef = useRef<THREE.Mesh>(null);
   const [targetPosition, setTargetPosition] = useState<THREE.Vector3 | null>(null);
   const [isFlying, setIsFlying] = useState(false);
+
+  // Load Earth texture using drei's useTexture hook
+  const [earthTexture, earthNormal] = useTexture([
+    'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg',
+    'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_normal_2048.jpg'
+  ]);
 
   useEffect(() => {
     if (destination) {
@@ -78,37 +84,30 @@ function Globe({ destination }: { destination?: string }) {
 
   return (
     <group ref={groupRef}>
-      {/* Main Globe - Liquid Mercury Effect */}
+      {/* Main Earth Globe with Real Texture */}
       <mesh ref={globeRef}>
         <sphereGeometry args={[2, 64, 64]} />
         <meshStandardMaterial
-          metalness={0.9}
-          roughness={0.1}
-          color={destination ? "#8b5cf6" : "#6366f1"}
+          map={earthTexture}
+          normalMap={earthNormal}
+          normalScale={new THREE.Vector2(0.5, 0.5)}
+          metalness={0.1}
+          roughness={0.9}
           emissive={destination ? "#8b5cf6" : "#6366f1"}
-          emissiveIntensity={0.3}
+          emissiveIntensity={destination ? 0.15 : 0.05}
         />
       </mesh>
       
-      {/* Aurora Gradient Overlay */}
+      {/* Atmospheric Glow */}
       <mesh>
         <sphereGeometry args={[2.05, 64, 64]} />
         <meshStandardMaterial
           transparent
-          opacity={0.4}
-          color="#d946ef"
-          emissive="#d946ef"
-          emissiveIntensity={0.5}
-        />
-      </mesh>
-
-      {/* Glowing Core */}
-      <mesh>
-        <sphereGeometry args={[0.3, 32, 32]} />
-        <meshStandardMaterial
-          color="#fbbf24"
-          emissive="#fbbf24"
-          emissiveIntensity={2}
+          opacity={0.2}
+          color="#87CEEB"
+          emissive="#87CEEB"
+          emissiveIntensity={0.1}
+          side={THREE.BackSide}
         />
       </mesh>
 

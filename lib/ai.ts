@@ -222,87 +222,22 @@ Return the JSON now:`;
   });
 
   try {
-    // Chain-of-thought reasoning for better error handling
-    const reasoningPrompt = `${prompt}
-
-If the response seems generic or lacks specifics, use chain-of-thought reasoning:
-1. Analyze what specific details are missing
-2. Research current information about ${destination}
-3. Break down each activity into specific components (time, location, cost, transport)
-4. Verify prices and availability
-5. Generate detailed, unique content with no repeats
-
-Return the JSON now:`;
-
+    // Simplified, fast generation - no retries, no generic checks
     let text: string;
     
-    // Use p-retry for automatic retries with exponential backoff
-    // Reduce retries to 2 to avoid timeout issues
-    try {
-      text = await pRetry(
-        async () => {
-          const result = await generateText({
-            model: openaiClient("gpt-4o-mini"),
-            system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
-            prompt: reasoningPrompt,
-            temperature: 0.3, // Lower temperature for more consistent JSON output
-            maxTokens: 5000, // Reduced further to speed up generation
-          });
-          
-          const content = result.text;
-          if (!content || content.trim().length === 0) {
-            throw new Error("No response from AI");
-          }
-          
-          // If response is too generic, retry with chain-of-thought
-          if (content.includes("generic") || content.length < 1000 || !content.includes("activities") || content.includes("Guided tour") || content.includes("Cultural experience")) {
-            console.log("Response seems generic, retrying with chain-of-thought...");
-            const chainOfThoughtPrompt = `${prompt}
-
-CHAIN-OF-THOUGHT REASONING REQUIRED - BE SPECIFIC:
-1. List 10+ specific attractions in ${destination} with exact names and current entry costs
-2. List 5+ specific vegetarian restaurants in ${destination} with names and typical meal costs
-3. What are current prices for transport passes? (e.g., JR Pass ¥50,000 for Japan, activate Day X)
-4. What is the exact route progression? (e.g., "Tokyo (Days 1–3) → Hakone (Day 4) → Kyoto (Days 5–6)")
-5. For each day, provide 3-5 activities with EXACT times (e.g., "9AM–12PM"), locations, costs in local currency
-6. Include specific transportation details: "Shinkansen Tokyo → Odawara (35 min, ¥3,000)" not "train"
-7. Calculate daily totals: Transport + Activities + Food = total in local currency
-
-CRITICAL: Generate REAL content. If you see "Guided tour - 9AM - $40", that's WRONG. 
-Instead use: "9AM–12PM: Senso-ji Temple, Asakusa (free; early for Shichi-Go-San kimono sightings). Lunch: Shojin vegan bento at Torikyu (¥1,800)."
-
-Now generate the detailed itinerary with these specific details:`;
-
-            const retryResult = await generateText({
-              model: openaiClient("gpt-4o-mini"),
-              system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
-              prompt: chainOfThoughtPrompt,
-              temperature: 0.3,
-              maxTokens: 5000, // Reduced to speed up generation
-            });
-            
-            const retryContent = retryResult.text;
-            if (!retryContent || retryContent.trim().length === 0) {
-              throw new Error("No response from AI retry");
-            }
-            return retryContent;
-          }
-          
-          return content;
-        },
-        {
-          retries: 2, // Reduced from 3 to avoid timeout
-          minTimeout: 1000, // Start with 1s delay
-          maxTimeout: 5000, // Max 5s delay between retries
-          onFailedAttempt: (errorInfo) => {
-            const errorMessage = (errorInfo as any).error?.message || String((errorInfo as any).error || errorInfo);
-            console.error(`Attempt ${errorInfo.attemptNumber} failed. ${errorInfo.retriesLeft} retries left.`, errorMessage);
-          },
-        }
-      );
-    } catch (apiError: any) {
-      // Convert error to friendly message
-      throw formatOpenAIError(apiError);
+    // Single attempt with optimized prompt for speed
+    const result = await generateText({
+      model: openaiClient("gpt-4o-mini"),
+      system: "You are a JSON-only travel itinerary generator. Return ONLY valid JSON. No markdown, no explanations. Start with { and end with }.",
+      prompt: prompt,
+      temperature: 0.4, // Slightly higher for faster generation
+      maxTokens: 4000, // Reduced for speed - enough for detailed itinerary
+    });
+    
+    text = result.text;
+    
+    if (!text || text.trim().length === 0) {
+      throw new Error("No response from AI");
     }
 
     // Clean and parse JSON response

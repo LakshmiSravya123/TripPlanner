@@ -207,6 +207,7 @@ function Particles() {
 
 export default function Globe3D({ destination, onDestinationChange }: Globe3DProps) {
   const [mounted, setMounted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Ensure we only render on client side to prevent hydration errors
@@ -223,13 +224,32 @@ export default function Globe3D({ destination, onDestinationChange }: Globe3DPro
     );
   }
 
+  if (error) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-900 to-slate-900 rounded-lg">
+        <div className="text-center text-white">
+          <p className="text-sm opacity-75">3D Globe unavailable</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full relative">
       <Canvas
         camera={{ position: [0, 0, 6], fov: 50 }}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ 
+          antialias: true, 
+          alpha: true,
+          powerPreference: "high-performance",
+          failIfMajorPerformanceCaveat: false,
+        }}
         className="bg-transparent"
         dpr={[1, 2]} // Limit pixel ratio to prevent performance issues
+        onError={(error) => {
+          console.error("Canvas error:", error);
+          setError("WebGL not supported");
+        }}
       >
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={1} />

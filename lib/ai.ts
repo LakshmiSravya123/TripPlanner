@@ -261,18 +261,17 @@ IMPORTANT RULES:
 Return the JSON now:`;
 
   // Use provided key or fallback to environment variable
-  const apiKey = formData.openaiKey || process.env.OPENAI_API_KEY;
+  const apiKey = formData.openaiKey?.trim() || process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
     throw new Error("OPENAI_API_KEY is not set. Please provide an API key in the form or set it in environment variables.");
   }
 
+  // Validate API key format
+  if (!apiKey.startsWith('sk-')) {
+    throw new Error("Invalid OpenAI API key format. API keys should start with 'sk-'");
+  }
+
   try {
-    // Temporarily set the API key in environment if provided
-    const originalKey = process.env.OPENAI_API_KEY;
-    if (formData.openaiKey) {
-      process.env.OPENAI_API_KEY = formData.openaiKey;
-    }
-    
     // Chain-of-thought reasoning for better error handling
     const reasoningPrompt = `${prompt}
 
@@ -285,8 +284,13 @@ If the response seems generic or lacks specifics, use chain-of-thought reasoning
 
 Return the JSON now:`;
 
+    // Create model with API key
+    const model = openai("gpt-4o-mini", {
+      apiKey: apiKey,
+    });
+
     let { text } = await generateText({
-      model: openai("gpt-4o-mini"),
+      model: model,
       system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
       prompt: reasoningPrompt,
       temperature: 0.3, // Lower temperature for more consistent JSON output
@@ -312,19 +316,18 @@ Instead use: "9AM–12PM: Senso-ji Temple, Asakusa (free; early for Shichi-Go-Sa
 
 Now generate the detailed itinerary with these specific details:`;
 
+      const retryModel = openai("gpt-4o-mini", {
+        apiKey: apiKey,
+      });
+
       const retryResult = await generateText({
-        model: openai("gpt-4o-mini"),
+        model: retryModel,
         system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
         prompt: chainOfThoughtPrompt,
         temperature: 0.3, // Lower temperature for more consistent JSON output
         maxTokens: 8000, // Increased for more detailed content
       });
       text = retryResult.text;
-    }
-    
-    // Restore original key
-    if (formData.openaiKey && originalKey) {
-      process.env.OPENAI_API_KEY = originalKey;
     }
 
     // Clean and parse JSON response

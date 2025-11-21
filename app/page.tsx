@@ -39,9 +39,10 @@ export default function Home() {
 
       const response = await fetch("/api/trip", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(formData),
-        credentials: "same-origin",
         signal: controller.signal,
       });
 

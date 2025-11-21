@@ -61,14 +61,33 @@ export async function generateTripPlan(formData: TripFormData) {
     ? weatherData.map((w, i) => `Day ${i + 1} (${w.date}): ${w.min}–${w.max}°C, ${w.condition}`).join("\n")
     : "Weather data unavailable.";
 
-  // API key setup
-  const apiKey = formData.openaiKey?.trim() || process.env.OPENAI_API_KEY?.trim();
+  // API key setup with better diagnostics
+  const userProvidedKey = formData.openaiKey?.trim();
+  const envKey = process.env.OPENAI_API_KEY?.trim();
+  const apiKey = userProvidedKey || envKey;
+  
+  console.log('API Key Debug:', {
+    userKeyProvided: !!userProvidedKey,
+    userKeyLength: userProvidedKey?.length || 0,
+    envKeyAvailable: !!envKey,
+    envKeyLength: envKey?.length || 0,
+    finalKeyLength: apiKey?.length || 0
+  });
+  
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is not set. Please provide an API key in the form or set it in environment variables.");
+    if (!userProvidedKey && !envKey) {
+      throw new Error("No OpenAI API key found. Please either:\n1. Enter your API key in the form, or\n2. Set OPENAI_API_KEY environment variable in Vercel dashboard");
+    } else {
+      throw new Error("API key is empty. Please check your key and try again.");
+    }
   }
 
   if (!apiKey.startsWith('sk-')) {
-    throw new Error("Invalid OpenAI API key format. API keys should start with 'sk-'");
+    throw new Error(`Invalid OpenAI API key format. Expected format: sk-... but got: ${apiKey.substring(0, 8)}... (Key should start with 'sk-')`);
+  }
+
+  if (apiKey.length < 20) {
+    throw new Error(`API key appears too short (${apiKey.length} characters). OpenAI keys are typically 51+ characters long.`);
   }
 
   const openaiClient = createOpenAI({
@@ -171,16 +190,31 @@ Make ${numDays + 1} days in balanced array. Each day: {"day":0,"date":"${startDa
     
   } catch (error: any) {
     console.error("AI generation error:", error);
+    console.error("Error details:", {
+      message: error.message,
+      status: error.status,
+      code: error.code,
+      type: error.type,
+      stack: error.stack?.substring(0, 500)
+    });
     
-    // Provide more specific error messages
-    if (error.message?.includes("API key")) {
-      throw formatOpenAIError(error);
-    } else if (error.message?.includes("quota") || error.message?.includes("rate limit")) {
-      throw formatOpenAIError(error);
-    } else if (error.message?.includes("timeout") || error.message?.includes("network")) {
+    // Provide more specific error messages based on error type
+    if (error.message?.includes("API key") || error.status === 401) {
+      throw new Error("Invalid API key. Please check that your OpenAI API key is correct and has sufficient credits.");
+    } else if (error.message?.includes("quota") || error.message?.includes("rate limit") || error.status === 429) {
+      throw new Error("API rate limit exceeded. Please wait a moment and try again, or check your OpenAI account usage.");
+    } else if (error.message?.includes("insufficient_quota") || error.status === 402) {
+      throw new Error("Insufficient API credits. Please add credits to your OpenAI account and try again.");
+    } else if (error.message?.includes("timeout") || error.message?.includes("network") || error.name === "AbortError") {
       throw new Error("Request timed out. Please try again with a simpler destination or date range.");
+    } else if (error.status === 400) {
+      throw new Error("Invalid request. Please check your inputs and try again.");
+    } else if (error.status === 500 || error.status === 502 || error.status === 503) {
+      throw new Error("OpenAI service is temporarily unavailable. Please try again in a few moments.");
     } else {
-      throw new Error("Unable to generate trip plan. Please check your API key and try again.");
+      // Include more details for debugging
+      const errorMsg = error.message || "Unknown error occurred";
+      throw new Error(`Unable to generate trip plan: ${errorMsg}. Please check your API key and try again.`);
     }
   }
 }

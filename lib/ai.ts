@@ -347,7 +347,8 @@ Now generate the detailed itinerary with these specific details:`;
         {
           retries: 3,
           onFailedAttempt: (error) => {
-            console.error(`Attempt ${error.attemptNumber} failed. ${error.retriesLeft} retries left.`, error.message);
+            const errorMessage = error.message || String(error);
+            console.error(`Attempt ${error.attemptNumber} failed. ${error.retriesLeft} retries left.`, errorMessage);
           },
         }
       );

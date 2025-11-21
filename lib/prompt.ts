@@ -75,6 +75,13 @@ export const itinerarySchema = z.object({
   tips: z.array(z.string()).optional().default([]),
 });
 
+export function buildItinerarySchemaForDuration(duration: number) {
+  const safeDuration = Math.max(1, Math.floor(duration || 1));
+  return itinerarySchema.extend({
+    days: z.array(itineraryDaySchema).min(safeDuration).max(safeDuration),
+  });
+}
+
 export interface GenerateItineraryInput {
   destination: string;
   startDate: string; // ISO date
@@ -152,6 +159,7 @@ Rules (STRICT JSON):
 - Do NOT include trailing commas.
 - Do NOT include any text before or after the JSON.
 - The JSON block above is only an example template. You MUST replace all values with accurate data for the actual trip requested: ${destination}, ${duration} days starting ${startDate}, and the given travelers, budget and pace.
+- The days array MUST contain exactly ${duration} entries, one for each day 1 through ${duration}, no more and no fewer.
 - NEVER use generic phrases like "explore local attractions".
 - Include real 2025 prices, events, weather, vegetarian options.
 - No "Why Visit", no maps, no fluff.

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import pRetry from "p-retry";
-import { buildGeneratePrompt, computeEndDate, itinerarySchema, type GenerateItineraryInput, type ItineraryData } from "@/lib/prompt";
+import { buildGeneratePrompt, computeEndDate, buildItinerarySchemaForDuration, type GenerateItineraryInput, type ItineraryData } from "@/lib/prompt";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -82,17 +82,18 @@ export async function POST(req: NextRequest) {
     };
 
     const prompt = buildGeneratePrompt(input);
+    const schema = buildItinerarySchemaForDuration(duration);
 
     const itineraryObject = await pRetry(
       async () => {
         const { object } = await generateObject({
           model: openaiClient("gpt-4o-mini"),
           temperature: 0.3,
-          maxTokens: 1500,
+          maxTokens: 2500,
           system:
             "You are Grok, a precise travel AI. You create detailed travel itineraries and must follow the provided JSON schema exactly.",
           prompt,
-          schema: itinerarySchema,
+          schema,
         });
 
         if (!object) {

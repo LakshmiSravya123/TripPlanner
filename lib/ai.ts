@@ -290,20 +290,28 @@ Return the JSON now:`;
     process.env.OPENAI_API_KEY = apiKey;
 
     let text: string;
+    
+    // Use p-retry for automatic retries with exponential backoff
     try {
-      const result = await generateText({
-        model: openai("gpt-4o-mini"),
-        system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
-        prompt: reasoningPrompt,
-        temperature: 0.3, // Lower temperature for more consistent JSON output
-        maxTokens: 8000, // Increased for more detailed content
-      });
-      text = result.text;
-      
-      // If response is too generic, retry with chain-of-thought
-      if (text.includes("generic") || text.length < 1000 || !text.includes("activities") || text.includes("Guided tour") || text.includes("Cultural experience")) {
-        console.log("Response seems generic, retrying with chain-of-thought...");
-        const chainOfThoughtPrompt = `${prompt}
+      text = await pRetry(
+        async () => {
+          const result = await generateText({
+            model: openai("gpt-4o-mini"),
+            system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
+            prompt: reasoningPrompt,
+            temperature: 0.3, // Lower temperature for more consistent JSON output
+            maxTokens: 6000, // Reduced to prevent token overflow
+          });
+          
+          const content = result.text;
+          if (!content || content.trim().length === 0) {
+            throw new Error("No response from AI");
+          }
+          
+          // If response is too generic, retry with chain-of-thought
+          if (content.includes("generic") || content.length < 1000 || !content.includes("activities") || content.includes("Guided tour") || content.includes("Cultural experience")) {
+            console.log("Response seems generic, retrying with chain-of-thought...");
+            const chainOfThoughtPrompt = `${prompt}
 
 CHAIN-OF-THOUGHT REASONING REQUIRED - BE SPECIFIC:
 1. List 10+ specific attractions in ${destination} with exact names and current entry costs
@@ -319,15 +327,30 @@ Instead use: "9AM–12PM: Senso-ji Temple, Asakusa (free; early for Shichi-Go-Sa
 
 Now generate the detailed itinerary with these specific details:`;
 
-        const retryResult = await generateText({
-          model: openai("gpt-4o-mini"),
-          system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
-          prompt: chainOfThoughtPrompt,
-          temperature: 0.3, // Lower temperature for more consistent JSON output
-          maxTokens: 8000, // Increased for more detailed content
-        });
-        text = retryResult.text;
-      }
+            const retryResult = await generateText({
+              model: openai("gpt-4o-mini"),
+              system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
+              prompt: chainOfThoughtPrompt,
+              temperature: 0.3,
+              maxTokens: 6000,
+            });
+            
+            const retryContent = retryResult.text;
+            if (!retryContent || retryContent.trim().length === 0) {
+              throw new Error("No response from AI retry");
+            }
+            return retryContent;
+          }
+          
+          return content;
+        },
+        {
+          retries: 3,
+          onFailedAttempt: (error) => {
+            console.error(`Attempt ${error.attemptNumber} failed. ${error.retriesLeft} retries left.`, error.message);
+          },
+        }
+      );
     } catch (apiError: any) {
       // Restore original key before throwing
       if (originalKey !== undefined) {

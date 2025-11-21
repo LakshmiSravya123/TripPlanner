@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
         const { object } = await generateObject({
           model: openaiClient("gpt-4o-mini"),
           temperature: 0.3,
-          maxTokens: 1200,
+          maxTokens: 800,
           system:
             "You are Grok, an expert travel editor AI. You create detailed travel itineraries and must follow the provided JSON schema exactly.",
           prompt,
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
         return object;
       },
       {
-        retries: 2,
+        retries: 0,
       }
     );
 

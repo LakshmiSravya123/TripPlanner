@@ -239,8 +239,12 @@ Return the JSON now:`;
     if (!text || text.trim().length === 0) {
       throw new Error("No response from AI");
     }
+  } catch (apiError: any) {
+    // Convert error to friendly message
+    throw formatOpenAIError(apiError);
+  }
 
-    // Clean and parse JSON response
+  // Clean and parse JSON response
     let jsonText = text.trim();
     
     // Log the raw response for debugging (first 1000 chars)

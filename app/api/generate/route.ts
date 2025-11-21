@@ -29,7 +29,7 @@ function validateBody(body: any): body is GenerateBody {
   );
 }
 
-function extractAndParseJson(text: string): ItineraryData {
+function extractAndParseJson(text: string, fallbackData?: { destination: string; duration: number; startDate: string; travelersDescription: string }): ItineraryData {
   let jsonString = text.trim();
 
   // Strip markdown fences if present
@@ -82,6 +82,44 @@ function extractAndParseJson(text: string): ItineraryData {
       return parsed as ItineraryData;
     } catch (finalErr: any) {
       console.error("/api/generate JSON recovery failed:", finalErr?.message);
+      
+      // Final fallback: return a minimal valid itinerary structure if fallback data provided
+      if (fallbackData) {
+        console.log("Generating fallback itinerary due to JSON parse failure");
+        return {
+          overview: {
+            title: `Your ${fallbackData.destination} Adventure`,
+            duration: `${fallbackData.duration} days`,
+            route: fallbackData.destination,
+            budgetBreakdown: `Estimated total for ${fallbackData.travelersDescription}`,
+            transport: "Local transport options available",
+          },
+          days: Array.from({ length: fallbackData.duration }, (_, i) => ({
+            day: i + 1,
+            date: new Date(new Date(fallbackData.startDate).getTime() + i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            weekday: new Date(new Date(fallbackData.startDate).getTime() + i * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'short' }),
+            city: fallbackData.destination,
+            weather: "Check local forecast",
+            dailyTotal: "$150",
+            activities: [
+              {
+                time: "9:00 AM",
+                activity: "Explore local attractions",
+                cost: "$50",
+                duration: "3h",
+                transport: "Walking/Local transport",
+                note: "AI had trouble generating detailed plans - please try again with a simpler request",
+              },
+            ],
+          })),
+          tips: [
+            "The AI encountered an issue generating your detailed itinerary",
+            "Please try again with a simpler request",
+            "Consider reducing the number of days or being less specific about activities",
+          ],
+        } as ItineraryData;
+      }
+      
       throw new Error(
         "The AI returned malformed JSON for this itinerary. Please try again, or make your request a bit simpler (fewer constraints)."
       );
@@ -147,10 +185,10 @@ export async function POST(req: NextRequest) {
       async () => {
         const { text } = await generateText({
           model: openaiClient("gpt-4o-mini"),
-          temperature: 0.6,
-          maxTokens: 2000,
+          temperature: 0.3,
+          maxTokens: 1500,
           system:
-            "You are Grok, a witty but precise travel planning AI. You MUST return only strict JSON, no commentary, no markdown.",
+            "You are Grok, a precise travel AI. Return ONLY valid JSON. No text before or after. No comments. No trailing commas.",
           prompt,
         });
 
@@ -165,7 +203,7 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    let itinerary = extractAndParseJson(result);
+    let itinerary = extractAndParseJson(result, { destination, duration, startDate, travelersDescription });
 
     // Ensure required structure with safe fallbacks
     if (!itinerary || typeof itinerary !== "object") {

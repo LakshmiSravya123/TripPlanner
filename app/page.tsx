@@ -74,12 +74,14 @@ export default function Home() {
         throw new Error("Invalid response from server. Please check your API key and try again.");
       }
       
-      // Cherry blossom reveal animation
-      setTimeout(() => {
-        setTripData(result);
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 5000);
-      }, 2000);
+      // Cherry blossom reveal animation - use requestAnimationFrame to avoid React 423 error
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          setTripData(result);
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 5000);
+        }, 2000);
+      });
     } catch (error: any) {
       console.error("Error generating trip:", error);
       

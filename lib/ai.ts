@@ -87,36 +87,57 @@ export async function generateTripPlan(formData: TripFormData) {
 
 Weather: ${weatherSummary}
 
-Return ONLY valid JSON (no markdown, no extra text). Structure:
+CRITICAL: Return ONLY valid JSON. No markdown, no explanations, no text before or after. Start with { and end with }.
+
+Required JSON structure:
 {
   "destination": "${destination}",
-  "description": "Brief overview",
+  "description": "Brief 1-2 sentence overview",
   "overview": {
-    "budget": {"accommodation": "$${Math.round(calculatedBudgetPerNight * numDays)}", "food": "$50-100/day", "transport": "$100-200", "activities": "$200-400", "total": "$${Math.round((calculatedBudgetPerNight * numDays + 350) * travelers)}"},
-    "transportPass": "Recommendation with cost",
-    "practicalInfo": ["Currency", "Tipping", "SIM/Wi-Fi"]
+    "budget": {
+      "accommodation": "$${Math.round(calculatedBudgetPerNight * numDays)}",
+      "food": "$50-100 per day",
+      "transport": "$100-200",
+      "activities": "$200-400",
+      "total": "$${Math.round((calculatedBudgetPerNight * numDays + 350) * travelers)}"
+    },
+    "transportPass": "Specific recommendation with cost",
+    "practicalInfo": ["Currency info", "Tipping customs", "SIM/Wi-Fi options"]
   },
-  "places": [{"name": "Place", "description": "Brief", "type": "landmark", "coordinates": [lon, lat]}],
+  "places": [
+    {"name": "Specific Place Name", "description": "Brief description", "type": "landmark", "coordinates": [0, 0]}
+  ],
   "dates": {"start": "${startDate}", "end": "${endDate}"},
   "travelers": ${travelers},
   "weather": ${JSON.stringify(weatherData)},
-  "flights": {"economy": {"priceRange": "$600-900", "link": "${googleFlightsLink}"}},
-  "hotels": {"budget": [{"name": "Hotel", "priceRange": "$${Math.round(calculatedBudgetPerNight * 0.7)}", "link": "${bookingBudgetLink}"}], "midRange": [{"name": "Hotel", "priceRange": "$${Math.round(calculatedBudgetPerNight * 1.2)}", "link": "${bookingMidLink}"}], "luxury": [{"name": "Hotel", "priceRange": "$${Math.round(calculatedBudgetPerNight * 1.8)}", "link": "${bookingLuxuryLink}"}]},
-  "itineraries": {
-    "balanced": [{"day": 0, "date": "${startDate}", "title": "Arrival", "activities": [{"time": "9AM-12PM", "title": "Activity", "location": "Place", "description": "Details", "transportation": "Method", "cost": "$50"}]}]
+  "flights": {
+    "economy": {"airline": "Major Airline", "priceRange": "$600-900", "duration": "8h 30m", "link": "${googleFlightsLink}"},
+    "comfort": {"airline": "Major Airline", "priceRange": "$900-1200", "duration": "8h 30m", "link": "${googleFlightsLink}"},
+    "premium": {"airline": "Major Airline", "priceRange": "$1200-1800", "duration": "8h 30m", "link": "${googleFlightsLink}"}
   },
-  "tips": ["Tip 1", "Tip 2"],
-  "costs": {"balanced": {"perPerson": "$1200-1800", "total": "$${1200 * travelers}-$${1800 * travelers}"}}
+  "hotels": {
+    "budget": [{"name": "Budget Hotel Name", "location": "City Center", "priceRange": "$${Math.round(calculatedBudgetPerNight * 0.7)}", "rating": 4.2, "link": "${bookingBudgetLink}"}],
+    "midRange": [{"name": "Mid-Range Hotel Name", "location": "City Center", "priceRange": "$${Math.round(calculatedBudgetPerNight * 1.2)}", "rating": 4.6, "link": "${bookingMidLink}"}],
+    "luxury": [{"name": "Luxury Hotel Name", "location": "Prime Location", "priceRange": "$${Math.round(calculatedBudgetPerNight * 1.8)}", "rating": 4.8, "link": "${bookingLuxuryLink}"}]
+  },
+  "itineraries": {
+    "balanced": []
+  },
+  "tips": ["Practical tip 1", "Practical tip 2", "Practical tip 3"],
+  "costs": {
+    "balanced": {"perPerson": "$1200-1800", "total": "$${1200 * travelers}-$${1800 * travelers}"}
+  }
 }
 
-RULES:
-- ${numDays + 1} days total (Day 0 arrival + ${numDays} full days)
-- Each activity: time, title, location, description, transportation, cost
-- Use REAL prices and specific place/restaurant names
-- Include dailyTotal for each day
-- NO generic placeholders
+Requirements:
+- Create ${numDays + 1} days total (Day 0 = arrival day, Days 1-${numDays} = full days)
+- Each day in itineraries.balanced must have: day (number), date (YYYY-MM-DD), title (e.g., "Tokyo Arrival"), activities (array)
+- Each activity must have: time (e.g., "9AM-12PM"), title (specific place/activity name), location (address/area), description (2-3 sentences), transportation (method with duration/cost), cost (in local currency)
+- Include dailyTotal field for each day (sum of transport + activities + food)
+- Use REAL prices and specific place/restaurant names - NO generic placeholders
+- Include vegetarian options if relevant
 
-Return this exact JSON structure:
+Return the JSON now:`;
 {
   "destination": "${destination}",
   "description": "A brief 1-2 sentence overview of ${destination}",

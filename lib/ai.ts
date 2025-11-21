@@ -252,7 +252,9 @@ Fill balanced array with ${numDays + 1} days (day 0 = arrival). Each day needs: 
       } catch (retryError: any) {
         console.error("❌ All JSON parsing attempts failed");
         console.error("Final error:", retryError.message);
-        throw new Error(`Invalid JSON from AI: ${parseError.message}. Please try again or use a simpler request.`);
+        console.error("Falling back to minimal trip plan due to JSON parse error.");
+        // Fallback: use an empty object so we can still build a safeResult with defaults
+        parsedResult = {};
       }
     }
     
@@ -309,7 +311,7 @@ Fill balanced array with ${numDays + 1} days (day 0 = arrival). Each day needs: 
     } else {
       // Include more details for debugging
       const errorMsg = error.message || "Unknown error occurred";
-      throw new Error(`Unable to generate trip plan: ${errorMsg}. Please check your API key and try again.`);
+      throw new Error(`Unable to generate trip plan: ${errorMsg}`);
     }
   }
 }

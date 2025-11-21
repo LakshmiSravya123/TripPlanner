@@ -1,4 +1,5 @@
 import { differenceInCalendarDays, format } from "date-fns";
+import { z } from "zod";
 
 export interface ItineraryActivity {
   time: string;
@@ -33,6 +34,46 @@ export interface ItineraryData {
   days: ItineraryDay[];
   tips: string[];
 }
+
+export const itineraryActivitySchema = z.object({
+  time: z.string().optional().default(""),
+  activity: z.string().optional().default(""),
+  cost: z.string().optional().default(""),
+  duration: z.string().optional().default(""),
+  transport: z.string().optional().default(""),
+  note: z.string().optional().default(""),
+  veggieTip: z.string().optional().default(""),
+});
+
+export const itineraryDaySchema = z.object({
+  day: z.number().int().positive().optional(),
+  date: z.string().optional().default(""),
+  weekday: z.string().optional().default(""),
+  city: z.string().optional().default(""),
+  weather: z.string().optional().default(""),
+  dailyTotal: z.string().optional().default(""),
+  activities: z.array(itineraryActivitySchema).optional().default([]),
+});
+
+export const itineraryOverviewSchema = z.object({
+  title: z.string().optional().default(""),
+  duration: z.string().optional().default(""),
+  route: z.string().optional().default(""),
+  budgetBreakdown: z.string().optional().default(""),
+  transport: z.string().optional().default(""),
+});
+
+export const itinerarySchema = z.object({
+  overview: itineraryOverviewSchema.optional().default({
+    title: "",
+    duration: "",
+    route: "",
+    budgetBreakdown: "",
+    transport: "",
+  }),
+  days: z.array(itineraryDaySchema).optional().default([]),
+  tips: z.array(z.string()).optional().default([]),
+});
 
 export interface GenerateItineraryInput {
   destination: string;

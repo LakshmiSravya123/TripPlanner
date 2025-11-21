@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOpenAI } from "@ai-sdk/openai";
-import { generateText } from "ai";
+import { generateObject } from "ai";
 import pRetry from "p-retry";
-import { buildGeneratePrompt, computeEndDate, type GenerateItineraryInput, type ItineraryData } from "@/lib/prompt";
+import { buildGeneratePrompt, computeEndDate, itinerarySchema, type GenerateItineraryInput, type ItineraryData } from "@/lib/prompt";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -27,67 +27,6 @@ function validateBody(body: any): body is GenerateBody {
     typeof body?.budgetLevel === "string" &&
     typeof body?.pace === "string"
   );
-}
-
-function extractAndParseJson(text: string, fallbackData?: { destination: string; duration: number; startDate: string; travelersDescription: string }): ItineraryData {
-  let jsonString = text.trim();
-
-  // Strip markdown fences if present
-  jsonString = jsonString.replace(/```json\s*/gi, "").replace(/```\s*/g, "");
-
-  const start = jsonString.indexOf("{");
-  const end = jsonString.lastIndexOf("}");
-  if (start === -1 || end === -1 || start >= end) {
-    throw new Error("No JSON object found in AI response");
-  }
-
-  jsonString = jsonString.substring(start, end + 1);
-
-  // Strip JS-style comments the model might have copied into the JSON
-  jsonString = jsonString.replace(/\/\/.*$/gm, "");
-  jsonString = jsonString.replace(/\/\*[\s\S]*?\*\//g, "");
-
-  // Remove trailing commas
-  let prevLength: number;
-  do {
-    prevLength = jsonString.length;
-    jsonString = jsonString.replace(/,(\s*[}\]])/g, "$1");
-  } while (jsonString.length !== prevLength);
-
-  // Remove invalid control characters
-  jsonString = jsonString.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, "");
-
-  try {
-    const parsed = JSON.parse(jsonString);
-    return parsed as ItineraryData;
-  } catch (err: any) {
-    console.error("/api/generate JSON parse failed:", err?.message);
-
-    // Second attempt: simple bracket balancing to recover slightly truncated output
-    let fixed = jsonString;
-    const openBraces = (fixed.match(/\{/g) || []).length;
-    const closeBraces = (fixed.match(/\}/g) || []).length;
-    const openBrackets = (fixed.match(/\[/g) || []).length;
-    const closeBrackets = (fixed.match(/\]/g) || []).length;
-
-    if (openBraces > closeBraces) {
-      fixed += "}".repeat(openBraces - closeBraces);
-    }
-    if (openBrackets > closeBrackets) {
-      fixed += "]".repeat(openBrackets - closeBrackets);
-    }
-
-    try {
-      const parsed = JSON.parse(fixed);
-      return parsed as ItineraryData;
-    } catch (finalErr: any) {
-      console.error("/api/generate JSON recovery failed:", finalErr?.message);
-
-      throw new Error(
-        "The AI returned malformed JSON for this itinerary. Please try again, or make your request a bit simpler (fewer constraints)."
-      );
-    }
-  }
 }
 
 export async function POST(req: NextRequest) {
@@ -144,29 +83,30 @@ export async function POST(req: NextRequest) {
 
     const prompt = buildGeneratePrompt(input);
 
-    const result = await pRetry(
+    const itineraryObject = await pRetry(
       async () => {
-        const { text } = await generateText({
+        const { object } = await generateObject({
           model: openaiClient("gpt-4o-mini"),
           temperature: 0.3,
           maxTokens: 1500,
           system:
-            "You are Grok, a precise travel AI. Return ONLY valid JSON. No text before or after. No comments. No trailing commas.",
+            "You are Grok, a precise travel AI. You create detailed travel itineraries and must follow the provided JSON schema exactly.",
           prompt,
+          schema: itinerarySchema,
         });
 
-        if (!text) {
+        if (!object) {
           throw new Error("Empty response from AI");
         }
 
-        return text;
+        return object;
       },
       {
         retries: 2,
       }
     );
 
-    let itinerary = extractAndParseJson(result, { destination, duration, startDate, travelersDescription });
+    let itinerary = itineraryObject as ItineraryData;
 
     // Ensure required structure with safe fallbacks
     if (!itinerary || typeof itinerary !== "object") {

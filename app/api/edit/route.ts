@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOpenAI } from "@ai-sdk/openai";
-import { generateText } from "ai";
+import { generateObject } from "ai";
 import pRetry from "p-retry";
-import { buildEditPrompt, type EditItineraryInput, type ItineraryData } from "@/lib/prompt";
+import { buildEditPrompt, itinerarySchema, type EditItineraryInput, type ItineraryData } from "@/lib/prompt";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -24,59 +24,10 @@ function validateBody(body: any): body is EditBody {
 }
 
 function extractAndParseJson(text: string): ItineraryData {
-  let jsonString = text.trim();
-  jsonString = jsonString.replace(/```json\s*/gi, "").replace(/```\s*/g, "");
-
-  const start = jsonString.indexOf("{");
-  const end = jsonString.lastIndexOf("}");
-  if (start === -1 || end === -1 || start >= end) {
-    throw new Error("No JSON object found in AI response");
-  }
-
-  jsonString = jsonString.substring(start, end + 1);
-
-  // Strip JS-style comments the model might have copied into the JSON
-  jsonString = jsonString.replace(/\/\/.*$/gm, "");
-  jsonString = jsonString.replace(/\/\*[\s\S]*?\*\//g, "");
-
-  let prevLength: number;
-  do {
-    prevLength = jsonString.length;
-    jsonString = jsonString.replace(/,(\s*[}\]])/g, "$1");
-  } while (jsonString.length !== prevLength);
-
-  jsonString = jsonString.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, "");
-
-  try {
-    const parsed = JSON.parse(jsonString);
-    return parsed as ItineraryData;
-  } catch (err: any) {
-    console.error("/api/edit JSON parse failed:", err?.message);
-
-    // Second attempt with simple bracket balancing
-    let fixed = jsonString;
-    const openBraces = (fixed.match(/\{/g) || []).length;
-    const closeBraces = (fixed.match(/\}/g) || []).length;
-    const openBrackets = (fixed.match(/\[/g) || []).length;
-    const closeBrackets = (fixed.match(/\]/g) || []).length;
-
-    if (openBraces > closeBraces) {
-      fixed += "}".repeat(openBraces - closeBraces);
-    }
-    if (openBrackets > closeBrackets) {
-      fixed += "]".repeat(openBrackets - closeBrackets);
-    }
-
-    try {
-      const parsed = JSON.parse(fixed);
-      return parsed as ItineraryData;
-    } catch (finalErr: any) {
-      console.error("/api/edit JSON recovery failed:", finalErr?.message);
-      throw new Error(
-        "The AI returned malformed JSON while editing this itinerary. Please try that change again or rephrase it slightly."
-      );
-    }
-  }
+  // Kept only as a type guard in case we ever need it; not used after switching to generateObject.
+  const jsonString = text.trim();
+  const parsed = JSON.parse(jsonString);
+  return parsed as ItineraryData;
 }
 
 export async function POST(req: NextRequest) {
@@ -130,29 +81,30 @@ export async function POST(req: NextRequest) {
 
     const prompt = buildEditPrompt(input);
 
-    const result = await pRetry(
+    const updatedItinerary = await pRetry(
       async () => {
-        const { text } = await generateText({
+        const { object } = await generateObject({
           model: openaiClient("gpt-4o-mini"),
           temperature: 0.3,
           maxTokens: 1200,
           system:
-            "You are Grok, an expert travel editor AI. Return ONLY valid JSON. No text before or after. No comments. No trailing commas.",
+            "You are Grok, an expert travel editor AI. You create detailed travel itineraries and must follow the provided JSON schema exactly.",
           prompt,
+          schema: itinerarySchema,
         });
 
-        if (!text) {
+        if (!object) {
           throw new Error("Empty response from AI");
         }
 
-        return text;
+        return object;
       },
       {
         retries: 2,
       }
     );
 
-    let updated = extractAndParseJson(result);
+    let updated = updatedItinerary as ItineraryData;
 
     if (!updated || typeof updated !== "object") {
       throw new Error("AI returned invalid structure");

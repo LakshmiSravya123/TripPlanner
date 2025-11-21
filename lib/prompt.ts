@@ -105,11 +105,15 @@ Return ONLY valid JSON with this structure:
 ],
 "tips": ["Use Suica card", "Download Google Translate", "Bring portable Wi-Fi"]
 }
-Rules:
-NEVER use generic phrases like "explore local attractions".
-Include real 2025 prices, events, weather, vegetarian options.
-No "Why Visit", no maps, no fluff.
-Make it witty, helpful, and perfectly paced.`;
+Rules (STRICT JSON):
+- Output must be a single valid JSON object only.
+- Do NOT include comments of any kind (no // or /* */).
+- Do NOT include trailing commas.
+- Do NOT include any text before or after the JSON.
+- NEVER use generic phrases like "explore local attractions".
+- Include real 2025 prices, events, weather, vegetarian options.
+- No "Why Visit", no maps, no fluff.
+- Make it witty, helpful, and perfectly paced.`;
 }
 
 export function buildEditPrompt(input: EditItineraryInput): string {

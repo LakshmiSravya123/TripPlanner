@@ -43,6 +43,10 @@ function extractAndParseJson(text: string): ItineraryData {
 
   jsonString = jsonString.substring(start, end + 1);
 
+  // Strip JS-style comments the model might have copied into the JSON
+  jsonString = jsonString.replace(/\/\/.*$/gm, "");
+  jsonString = jsonString.replace(/\/\*[\s\S]*?\*\//g, "");
+
   // Remove trailing commas
   let prevLength: number;
   do {
@@ -57,7 +61,31 @@ function extractAndParseJson(text: string): ItineraryData {
     const parsed = JSON.parse(jsonString);
     return parsed as ItineraryData;
   } catch (err: any) {
-    throw new Error(`Invalid JSON from AI: ${err.message}`);
+    console.error("/api/generate JSON parse failed:", err?.message);
+
+    // Second attempt: simple bracket balancing to recover slightly truncated output
+    let fixed = jsonString;
+    const openBraces = (fixed.match(/\{/g) || []).length;
+    const closeBraces = (fixed.match(/\}/g) || []).length;
+    const openBrackets = (fixed.match(/\[/g) || []).length;
+    const closeBrackets = (fixed.match(/\]/g) || []).length;
+
+    if (openBraces > closeBraces) {
+      fixed += "}".repeat(openBraces - closeBraces);
+    }
+    if (openBrackets > closeBrackets) {
+      fixed += "]".repeat(openBrackets - closeBrackets);
+    }
+
+    try {
+      const parsed = JSON.parse(fixed);
+      return parsed as ItineraryData;
+    } catch (finalErr: any) {
+      console.error("/api/generate JSON recovery failed:", finalErr?.message);
+      throw new Error(
+        "The AI returned malformed JSON for this itinerary. Please try again, or make your request a bit simpler (fewer constraints)."
+      );
+    }
   }
 }
 

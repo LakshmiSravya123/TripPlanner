@@ -180,7 +180,7 @@ export default function Home() {
               />
             </h1>
             <p className="text-xl md:text-2xl text-purple-200 max-w-2xl mx-auto leading-relaxed">
-              Tell me your destination, style and budget, and I'll design a magical trip for you.
+              Tell me your destination, style and budget, and I&apos;ll design a magical trip for you.
             </p>
           </motion.div>
         </motion.div>

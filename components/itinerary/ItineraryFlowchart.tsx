@@ -39,10 +39,9 @@ export default function ItineraryFlowchart({
   activeTab,
   onNodeClick,
 }: ItineraryFlowchartProps) {
-  const itinerary = itineraries?.[activeTab] || itineraries?.balanced || itineraries?.economic || {};
-
   // Convert itinerary to React Flow nodes and edges
   const { initialNodes, initialEdges } = useMemo(() => {
+    const itinerary = itineraries?.[activeTab] || itineraries?.balanced || itineraries?.economic || {};
     const nodes: Node[] = [];
     const edges: Edge[] = [];
 
@@ -172,7 +171,7 @@ export default function ItineraryFlowchart({
     });
 
     return { initialNodes: nodes, initialEdges: edges };
-  }, [itinerary]);
+  }, [itineraries, activeTab]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);

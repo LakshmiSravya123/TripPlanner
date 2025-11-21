@@ -73,7 +73,7 @@ export default function EnhancedDestinationMap({ destination, places, descriptio
           setIsGeocoding(false);
         });
     }
-  }, [destination]);
+  }, [destination, coords, isGeocoding]);
 
   if (!coords) {
     return (
@@ -93,7 +93,7 @@ export default function EnhancedDestinationMap({ destination, places, descriptio
           ) : (
             <div className="text-center py-8">
               <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-2">Map unavailable for "{destination}"</p>
+              <p className="text-gray-600 mb-2">Map unavailable for &quot;{destination}&quot;</p>
               <p className="text-sm text-gray-500">Unable to find coordinates for this destination</p>
             </div>
           )}

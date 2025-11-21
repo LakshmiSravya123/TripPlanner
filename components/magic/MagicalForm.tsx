@@ -52,7 +52,7 @@ export default function MagicalForm({ onSubmit, loading }: MagicalFormProps) {
     if (savedKey) {
       setOpenaiKey(savedKey);
     }
-  }, []);
+  }, [startDate, endDate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,7 +178,7 @@ export default function MagicalForm({ onSubmit, loading }: MagicalFormProps) {
         >
           <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
             <Users className="w-5 h-5 text-purple-600" />
-            Group (e.g., "2 adults vegetarian")
+            Group (e.g., &quot;2 adults vegetarian&quot;)
           </label>
           <motion.div
             className="relative"
@@ -198,7 +198,7 @@ export default function MagicalForm({ onSubmit, loading }: MagicalFormProps) {
                 // Store full group string for later use
                 setGroupInput(value);
               }}
-              placeholder="e.g., 2 adults vegetarian"
+              placeholder='e.g., 2 adults vegetarian'
               className="relative w-full px-6 py-4 rounded-2xl border-2 border-green-200/50 bg-white/80 backdrop-blur-xl focus:border-green-500 focus:outline-none focus:ring-4 focus:ring-green-200/50 transition-all text-lg"
               required
             />
@@ -211,7 +211,7 @@ export default function MagicalForm({ onSubmit, loading }: MagicalFormProps) {
         >
           <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
             <DollarSign className="w-5 h-5 text-purple-600" />
-            Budget (e.g., "mid ¥200k")
+            Budget (e.g., &quot;mid ¥200k&quot;)
           </label>
           <motion.div
             className="relative"
@@ -222,7 +222,7 @@ export default function MagicalForm({ onSubmit, loading }: MagicalFormProps) {
               type="text"
               value={budgetInput}
               onChange={(e) => setBudgetInput(e.target.value)}
-              placeholder="e.g., mid ¥200k or $200/night"
+              placeholder='e.g., mid ¥200k or $200/night'
               className="relative w-full px-6 py-4 rounded-2xl border-2 border-amber-200/50 bg-white/80 backdrop-blur-xl focus:border-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-200/50 transition-all text-lg"
               required
             />

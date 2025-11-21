@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
     const { text } = await generateText({
       model: openaiClient("gpt-4o-mini"),
       temperature: 0.3,
-      maxTokens: 1800,
+      maxTokens: 2500,
       system:
         "You are Grok, a precise travel AI. Return ONLY valid JSON. No text before or after. No comments. No trailing commas.",
       prompt,

@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
+import pRetry from "p-retry";
 import { getWeatherForecast } from "./weather";
 import { getCoordinates, buildGoogleFlightsLink, buildBookingLink } from "./utils";
 import { getPlaceCoordinates } from "./places";
@@ -335,17 +336,8 @@ Now generate the detailed itinerary with these specific details:`;
         delete process.env.OPENAI_API_KEY;
       }
       
-      // Check for API key errors
-      if (apiError.message?.includes("API key") || apiError.message?.includes("401") || apiError.message?.includes("Unauthorized")) {
-        throw new Error("Invalid OpenAI API key. Please check your API key and try again.");
-      }
-      if (apiError.message?.includes("rate limit") || apiError.message?.includes("429")) {
-        throw new Error("OpenAI API rate limit exceeded. Please try again later or check your account limits.");
-      }
-      if (apiError.message?.includes("quota") || apiError.message?.includes("insufficient_quota")) {
-        throw new Error("OpenAI API quota exceeded. Please add credits to your OpenAI account.");
-      }
-      throw apiError;
+      // Convert error to friendly message
+      throw formatOpenAIError(apiError);
     } finally {
       // Restore original key
       if (originalKey !== undefined) {
@@ -508,6 +500,67 @@ Now generate the detailed itinerary with these specific details:`;
     throw new Error("Invalid response format");
   } catch (error) {
     console.error("AI generation error:", error);
-    throw error;
+    // Format error to friendly message
+    throw formatOpenAIError(error);
   }
+}
+
+/**
+ * Format OpenAI errors into user-friendly messages
+ * Prevents [object Object] from being displayed to users
+ */
+function formatOpenAIError(error: any): Error {
+  // Log full error for debugging
+  console.error("Full error details:", error);
+  
+  let message = "Unknown error—check console for details.";
+  
+  // Extract error message from various error formats
+  const errorMessage = error?.message || error?.error?.message || String(error);
+  const errorCode = error?.code || error?.status || error?.statusCode;
+  
+  // Check for specific error types
+  if (
+    errorMessage?.includes("invalid_request_error") ||
+    errorMessage?.includes("authentication_error") ||
+    errorMessage?.includes("API key") ||
+    errorCode === 401 ||
+    errorMessage?.includes("Unauthorized")
+  ) {
+    message = "Check your OpenAI API key (Settings → Env Vars).";
+  } else if (
+    errorMessage?.includes("insufficient_quota") ||
+    errorCode === 402 ||
+    errorMessage?.includes("quota")
+  ) {
+    message = "Out of API credits—add payment in OpenAI dashboard.";
+  } else if (
+    errorMessage?.includes("network") ||
+    errorMessage?.includes("timeout") ||
+    errorMessage?.includes("ECONNREFUSED") ||
+    errorMessage?.includes("fetch")
+  ) {
+    message = "Internet issue—check connection and retry.";
+  } else if (
+    errorMessage?.includes("rate_limit") ||
+    errorCode === 429 ||
+    errorMessage?.includes("rate limit")
+  ) {
+    message = "Rate limited—simplify prompt or wait 1 min.";
+  } else if (
+    errorMessage?.includes("token") ||
+    errorMessage?.includes("maximum context length") ||
+    errorMessage?.includes("context_length_exceeded")
+  ) {
+    message = "Prompt too complex—try shorter trip or simpler destination.";
+  } else if (errorMessage?.includes("No response from AI")) {
+    message = "AI returned empty response—try again with different inputs.";
+  } else if (errorMessage?.includes("AI response invalid")) {
+    message = "AI response invalid—try simpler inputs.";
+  } else if (typeof errorMessage === "string" && errorMessage.length > 0) {
+    // Use the error message if it's a string
+    message = errorMessage;
+  }
+  
+  return new Error(message);
 }

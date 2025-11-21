@@ -54,7 +54,10 @@ export default function Home() {
         let errorText = "";
         try {
           const errorData = await response.json();
-          errorText = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+          // Ensure error is a string, never [object Object]
+          errorText = typeof errorData.error === "string" 
+            ? errorData.error 
+            : `HTTP ${response.status}: ${response.statusText}`;
         } catch {
           errorText = `HTTP ${response.status}: ${response.statusText}`;
         }
@@ -79,19 +82,39 @@ export default function Home() {
       }, 2000);
     } catch (error: any) {
       console.error("Error generating trip:", error);
-      let errorMessage = "Network error or server unavailable";
       
-      if (error.name === "AbortError" || error.message?.includes("aborted")) {
-        errorMessage = "Request timed out after 2 minutes. The trip generation is taking longer than expected. Please try again with a simpler request or check your API key.";
-      } else if (error.message?.includes("Failed to fetch") || error.message?.includes("NetworkError")) {
+      // Extract error message from response or error object
+      let errorMessage = "Unknown error—check console for details.";
+      
+      try {
+        // Try to get error from response JSON
+        if (error.message && typeof error.message === "string") {
+          errorMessage = error.message;
+        } else if (error.error && typeof error.error === "string") {
+          errorMessage = error.error;
+        } else if (typeof error === "string") {
+          errorMessage = error;
+        }
+      } catch (e) {
+        // Fallback if parsing fails
+        errorMessage = "Failed to generate trip plan. Please try again.";
+      }
+      
+      // Ensure we never show [object Object]
+      if (typeof errorMessage !== "string" || errorMessage.includes("[object")) {
+        errorMessage = "Failed to generate trip plan. Please check your API key and try again.";
+      }
+      
+      // Handle specific error types
+      if (error.name === "AbortError" || errorMessage.includes("aborted") || errorMessage.includes("timeout")) {
+        errorMessage = "Request timed out. The trip generation is taking longer than expected. Please try again with a simpler request.";
+      } else if (errorMessage.includes("Failed to fetch") || errorMessage.includes("NetworkError") || errorMessage.includes("Internet issue")) {
         errorMessage = "Network error. Please check your internet connection and try again.";
-      } else if (error.message) {
-        errorMessage = error.message;
       }
       
       toast.error("Failed to generate trip plan", {
-        description: `${errorMessage}\n\nTroubleshooting:\n1. Check your OpenAI API key is set correctly\n2. Verify you have API credits available\n3. Check your internet connection\n4. Try a simpler destination or shorter trip`,
-        duration: 15000,
+        description: errorMessage,
+        duration: 10000,
       });
     } finally {
       setLoading(false);

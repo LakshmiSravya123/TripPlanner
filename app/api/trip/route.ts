@@ -51,22 +51,36 @@ export async function POST(request: NextRequest) {
     console.error("Trip generation error:", error);
     console.error("Error stack:", error.stack);
     
-    // Provide more specific error messages
-    let errorMessage = error.message || "Failed to generate trip plan";
+    // Extract friendly error message (already formatted by formatOpenAIError)
+    let errorMessage = error?.message || "Failed to generate trip plan";
     let statusCode = 500;
     
-    if (errorMessage.includes("API key") || errorMessage.includes("OPENAI_API_KEY")) {
-      errorMessage = "OpenAI API key is invalid or missing. Please check your API key in the form or environment variables.";
+    // Determine status code based on error type
+    if (
+      errorMessage.includes("API key") ||
+      errorMessage.includes("Check your OpenAI API key") ||
+      errorMessage.includes("OPENAI_API_KEY")
+    ) {
       statusCode = 400;
-    } else if (errorMessage.includes("rate limit") || errorMessage.includes("quota") || errorMessage.includes("insufficient_quota")) {
-      errorMessage = "OpenAI API rate limit exceeded or quota reached. Please check your OpenAI account and add credits.";
+    } else if (
+      errorMessage.includes("Rate limited") ||
+      errorMessage.includes("rate limit") ||
+      errorMessage.includes("quota")
+    ) {
       statusCode = 429;
-    } else if (errorMessage.includes("network") || errorMessage.includes("fetch") || errorMessage.includes("ECONNREFUSED")) {
-      errorMessage = "Network error. Please check your internet connection and try again.";
+    } else if (
+      errorMessage.includes("Internet issue") ||
+      errorMessage.includes("network") ||
+      errorMessage.includes("fetch")
+    ) {
       statusCode = 503;
     } else if (errorMessage.includes("timeout") || errorMessage.includes("aborted")) {
-      errorMessage = "Request timed out. The trip generation is taking too long. Please try again with a simpler request.";
       statusCode = 504;
+    }
+    
+    // Ensure errorMessage is always a string (never [object Object])
+    if (typeof errorMessage !== "string") {
+      errorMessage = String(errorMessage);
     }
     
     return NextResponse.json(

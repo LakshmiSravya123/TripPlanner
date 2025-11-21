@@ -3,19 +3,35 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign } from "lucide-react";
 
+interface CostEntry {
+  perPerson?: string;
+  total?: string;
+}
+
 interface CostSummaryProps {
-  costs: {
-    economic: { perPerson: string; total: string };
-    balanced: { perPerson: string; total: string };
-    luxury: { perPerson: string; total: string };
+  costs?: {
+    economic?: CostEntry;
+    balanced?: CostEntry;
+    luxury?: CostEntry;
   };
 }
 
 export default function CostSummary({ costs }: CostSummaryProps) {
+  const defaultEntry: CostEntry = {
+    perPerson: "–",
+    total: "–",
+  };
+
+  const safeCosts = {
+    economic: costs?.economic || defaultEntry,
+    balanced: costs?.balanced || defaultEntry,
+    luxury: costs?.luxury || defaultEntry,
+  };
+
   const plans = [
-    { name: "Economic", data: costs.economic, color: "from-green-500 to-green-600" },
-    { name: "Balanced", data: costs.balanced, color: "from-blue-500 to-blue-600" },
-    { name: "Luxury", data: costs.luxury, color: "from-amber-500 to-amber-600" },
+    { name: "Economic", data: safeCosts.economic, color: "from-green-500 to-green-600" },
+    { name: "Balanced", data: safeCosts.balanced, color: "from-blue-500 to-blue-600" },
+    { name: "Luxury", data: safeCosts.luxury, color: "from-amber-500 to-amber-600" },
   ];
 
   return (
@@ -39,11 +55,11 @@ export default function CostSummary({ costs }: CostSummaryProps) {
               <div className="space-y-2">
                 <div>
                   <div className="text-sm opacity-90">Per Person</div>
-                  <div className="text-2xl font-bold">{plan.data.perPerson}</div>
+                  <div className="text-2xl font-bold">{plan.data.perPerson || "–"}</div>
                 </div>
                 <div>
                   <div className="text-sm opacity-90">Total</div>
-                  <div className="text-xl font-semibold">{plan.data.total}</div>
+                  <div className="text-xl font-semibold">{plan.data.total || "–"}</div>
                 </div>
               </div>
             </div>

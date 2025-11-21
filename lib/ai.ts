@@ -263,6 +263,22 @@ Fill balanced array with ${numDays + 1} days (day 0 = arrival). Each day needs: 
       throw new Error("Invalid response structure from AI service");
     }
     
+    // Build robust costs structure with sensible defaults
+    const baseTotal = 1200 * travelers;
+    const safeCosts = parsedResult.costs || {};
+    const economic = safeCosts.economic || {
+      perPerson: `$${Math.round(baseTotal * 0.7 / Math.max(travelers, 1))}`,
+      total: `$${Math.round(baseTotal * 0.7)}`,
+    };
+    const balanced = safeCosts.balanced || {
+      perPerson: `$${Math.round(baseTotal / Math.max(travelers, 1))}`,
+      total: `$${baseTotal}`,
+    };
+    const luxury = safeCosts.luxury || {
+      perPerson: `$${Math.round(baseTotal * 1.5 / Math.max(travelers, 1))}`,
+      total: `$${Math.round(baseTotal * 1.5)}`,
+    };
+
     // Ensure required fields with safe defaults
     const safeResult = {
       destination: parsedResult.destination || destination,
@@ -280,7 +296,11 @@ Fill balanced array with ${numDays + 1} days (day 0 = arrival). Each day needs: 
       hotels: parsedResult.hotels || { midRange: [{ name: "Recommended Hotels", priceRange: `$${calculatedBudgetPerNight}`, link: bookingMidLink }] },
       itineraries: parsedResult.itineraries || { balanced: [] },
       tips: Array.isArray(parsedResult.tips) ? parsedResult.tips : ["Book accommodations in advance", "Check local weather", "Carry local currency"],
-      costs: parsedResult.costs || { balanced: { total: `$${1200 * travelers}` } }
+      costs: {
+        economic,
+        balanced,
+        luxury,
+      },
     };
     
     return safeResult;

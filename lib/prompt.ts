@@ -160,6 +160,8 @@ Rules (STRICT JSON):
 - Do NOT include any text before or after the JSON.
 - The JSON block above is only an example template. You MUST replace all values with accurate data for the actual trip requested: ${destination}, ${duration} days starting ${startDate}, and the given travelers, budget and pace.
 - The days array MUST contain exactly ${duration} entries, one for each day 1 through ${duration}, no more and no fewer.
+- For each day, include at most 3 activities in activities[], each with short, specific text (around 10–20 words, no long paragraphs).
+- Keep note and veggieTip to a single concise sentence each.
 - NEVER use generic phrases like "explore local attractions".
 - Include real 2025 prices, events, weather, vegetarian options.
 - No "Why Visit", no maps, no fluff.

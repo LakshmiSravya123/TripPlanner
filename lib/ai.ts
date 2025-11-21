@@ -226,7 +226,7 @@ Return the JSON now:`;
     let text: string;
     
     // Single attempt with optimized prompt for speed
-    const result = await generateText({
+    const aiResult = await generateText({
       model: openaiClient("gpt-4o-mini"),
       system: "You are a JSON-only travel itinerary generator. Return ONLY valid JSON. No markdown, no explanations. Start with { and end with }.",
       prompt: prompt,
@@ -234,7 +234,7 @@ Return the JSON now:`;
       maxTokens: 4000, // Reduced for speed - enough for detailed itinerary
     });
     
-    text = result.text;
+    text = aiResult.text;
     
     if (!text || text.trim().length === 0) {
       throw new Error("No response from AI");

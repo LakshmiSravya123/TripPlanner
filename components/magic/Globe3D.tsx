@@ -209,10 +209,13 @@ export default function Globe3D({ destination, onDestinationChange }: Globe3DPro
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    // Ensure we only render on client side to prevent hydration errors
+    if (typeof window !== 'undefined') {
+      setMounted(true);
+    }
   }, []);
 
-  if (!mounted) {
+  if (!mounted || typeof window === 'undefined') {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
@@ -226,6 +229,7 @@ export default function Globe3D({ destination, onDestinationChange }: Globe3DPro
         camera={{ position: [0, 0, 6], fov: 50 }}
         gl={{ antialias: true, alpha: true }}
         className="bg-transparent"
+        dpr={[1, 2]} // Limit pixel ratio to prevent performance issues
       >
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={1} />

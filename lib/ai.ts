@@ -65,38 +65,42 @@ export async function generateTripPlan(formData: TripFormData) {
     : "Weather data unavailable. Using general seasonal guidance.";
 
   // Search for current prices and events (with timeout to prevent hanging)
+  // Make these non-blocking - run in parallel and don't wait too long
   let jrPassInfo = '';
   let currentEvents = '';
   let currentPrices = '';
   
-  try {
-    if (destination.toLowerCase().includes('japan')) {
-      jrPassInfo = await Promise.race([
+  // Run all searches in parallel with short timeouts
+  const searchPromises = [];
+  
+  if (destination.toLowerCase().includes('japan')) {
+    searchPromises.push(
+      Promise.race([
         searchCurrentPrice('JR Pass', 'Japan'),
-        new Promise<string>((resolve) => setTimeout(() => resolve(''), 5000)) // 5s timeout
-      ]);
-    }
-  } catch (e) {
-    console.warn('JR Pass search failed:', e);
+        new Promise<string>((resolve) => setTimeout(() => resolve(''), 3000)) // 3s timeout
+      ]).then(result => { jrPassInfo = result; }).catch(() => {})
+    );
   }
   
-  try {
-    currentEvents = await Promise.race([
+  searchPromises.push(
+    Promise.race([
       searchTravelInfo(destination, 'current events 2025'),
-      new Promise<string>((resolve) => setTimeout(() => resolve(''), 5000))
-    ]);
-  } catch (e) {
-    console.warn('Current events search failed:', e);
-  }
+      new Promise<string>((resolve) => setTimeout(() => resolve(''), 3000))
+    ]).then(result => { currentEvents = result; }).catch(() => {})
+  );
   
-  try {
-    currentPrices = await Promise.race([
+  searchPromises.push(
+    Promise.race([
       searchTravelInfo(destination, 'current prices 2025'),
-      new Promise<string>((resolve) => setTimeout(() => resolve(''), 5000))
-    ]);
-  } catch (e) {
-    console.warn('Current prices search failed:', e);
-  }
+      new Promise<string>((resolve) => setTimeout(() => resolve(''), 3000))
+    ]).then(result => { currentPrices = result; }).catch(() => {})
+  );
+  
+  // Wait max 3 seconds for all searches
+  await Promise.race([
+    Promise.all(searchPromises),
+    new Promise(resolve => setTimeout(resolve, 3000))
+  ]);
 
   const groupDescription = group || `${travelers} ${travelers === 1 ? 'adult' : 'adults'}`;
   const budgetDescription = budget || (calculatedBudgetPerNight ? `$${calculatedBudgetPerNight}/night` : 'mid-range');

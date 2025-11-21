@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateTripPlan } from "@/lib/ai";
 
 // Increase timeout for Vercel (max 60s for Hobby, 300s for Pro)
-export const maxDuration = 300; // 5 minutes for Pro plan, adjust for Hobby
+export const maxDuration = 120; // 2 minutes - more reasonable timeout
 
 export async function POST(request: NextRequest) {
   try {

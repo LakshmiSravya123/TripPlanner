@@ -35,7 +35,7 @@ export default function Home() {
     try {
       // Create AbortController for timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout (matches Vercel Pro limit)
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout (more reasonable)
 
       const response = await fetch("/api/trip", {
         method: "POST",
@@ -78,14 +78,16 @@ export default function Home() {
       console.error("Error generating trip:", error);
       let errorMessage = "Network error or server unavailable";
       
-      if (error.name === "AbortError") {
-        errorMessage = "Request timed out. The trip generation is taking too long. Please try again.";
+      if (error.name === "AbortError" || error.message?.includes("aborted")) {
+        errorMessage = "Request timed out after 2 minutes. The trip generation is taking longer than expected. Please try again with a simpler request or check your API key.";
+      } else if (error.message?.includes("Failed to fetch") || error.message?.includes("NetworkError")) {
+        errorMessage = "Network error. Please check your internet connection and try again.";
       } else if (error.message) {
         errorMessage = error.message;
       }
       
       toast.error("Failed to generate trip plan", {
-        description: `${errorMessage}\n\nPlease check:\n1. Your OpenAI API key is set correctly\n2. You have API credits available\n3. Your internet connection is stable\n4. The server is running properly`,
+        description: `${errorMessage}\n\nTroubleshooting:\n1. Check your OpenAI API key is set correctly\n2. Verify you have API credits available\n3. Check your internet connection\n4. Try a simpler destination or shorter trip`,
         duration: 15000,
       });
     } finally {

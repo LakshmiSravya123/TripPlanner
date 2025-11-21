@@ -6,6 +6,12 @@ import { OrbitControls, Stars, Environment, useTexture } from "@react-three/drei
 import * as THREE from "three";
 import { getCoordinates } from "@/lib/utils";
 
+// Polyfill for unstable_act if needed
+if (typeof window !== 'undefined' && !(window as any).React?.unstable_act) {
+  (window as any).React = (window as any).React || {};
+  (window as any).React.unstable_act = (fn: () => void) => fn();
+}
+
 interface Globe3DProps {
   destination?: string;
   onDestinationChange?: (destination: string) => void;
@@ -30,6 +36,7 @@ function Globe({ destination }: { destination?: string }) {
   const [isFlying, setIsFlying] = useState(false);
 
   // Load Earth texture using drei's useTexture hook
+  // Since this component is dynamically imported with ssr: false, it's safe to call hooks
   const [earthTexture, earthNormal] = useTexture([
     'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg',
     'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_normal_2048.jpg'
@@ -199,6 +206,20 @@ function Particles() {
 }
 
 export default function Globe3D({ destination, onDestinationChange }: Globe3DProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full relative">
       <Canvas

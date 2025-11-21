@@ -1,4 +1,4 @@
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { generateText } from "ai";
 import pRetry from "p-retry";
 import { getWeatherForecast } from "./weather";
@@ -272,6 +272,10 @@ Return the JSON now:`;
     throw new Error("Invalid OpenAI API key format. API keys should start with 'sk-'");
   }
 
+  const openaiClient = createOpenAI({
+    apiKey,
+  });
+
   try {
     // Chain-of-thought reasoning for better error handling
     const reasoningPrompt = `${prompt}
@@ -285,10 +289,6 @@ If the response seems generic or lacks specifics, use chain-of-thought reasoning
 
 Return the JSON now:`;
 
-    // Set API key in environment for this request
-    const originalKey = process.env.OPENAI_API_KEY;
-    process.env.OPENAI_API_KEY = apiKey;
-
     let text: string;
     
     // Use p-retry for automatic retries with exponential backoff
@@ -296,7 +296,7 @@ Return the JSON now:`;
       text = await pRetry(
         async () => {
           const result = await generateText({
-            model: openai("gpt-4o-mini"),
+            model: openaiClient("gpt-4o-mini"),
             system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
             prompt: reasoningPrompt,
             temperature: 0.3, // Lower temperature for more consistent JSON output
@@ -328,7 +328,7 @@ Instead use: "9AM–12PM: Senso-ji Temple, Asakusa (free; early for Shichi-Go-Sa
 Now generate the detailed itinerary with these specific details:`;
 
             const retryResult = await generateText({
-              model: openai("gpt-4o-mini"),
+              model: openaiClient("gpt-4o-mini"),
               system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
               prompt: chainOfThoughtPrompt,
               temperature: 0.3,
@@ -353,22 +353,8 @@ Now generate the detailed itinerary with these specific details:`;
         }
       );
     } catch (apiError: any) {
-      // Restore original key before throwing
-      if (originalKey !== undefined) {
-        process.env.OPENAI_API_KEY = originalKey;
-      } else {
-        delete process.env.OPENAI_API_KEY;
-      }
-      
       // Convert error to friendly message
       throw formatOpenAIError(apiError);
-    } finally {
-      // Restore original key
-      if (originalKey !== undefined) {
-        process.env.OPENAI_API_KEY = originalKey;
-      } else {
-        delete process.env.OPENAI_API_KEY;
-      }
     }
 
     // Clean and parse JSON response

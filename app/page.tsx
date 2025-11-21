@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import InkRevealText from "@/components/magic/InkRevealText";
 import TimelineItinerary from "@/components/itinerary/TimelineItinerary";
+import Flowchart from "@/components/Flowchart";
 import AIChatSidebar from "@/components/AIChatSidebar";
 import { Sparkles, Loader2, Calendar as CalendarIcon, MapPin, Users, DollarSign, Gauge } from "lucide-react";
 import { useSmoothScroll } from "@/hooks/useSmoothScroll";
@@ -179,6 +180,41 @@ export default function Home() {
         }))
       : [];
 
+    const handleReorderDays = (order: number[]) => {
+      if (!itinerary || !Array.isArray(itinerary.days) || order.length === 0) return;
+
+      const originalDays = itinerary.days;
+      const numbered = originalDays.map((day: any, index: number) => ({
+        value: day,
+        num: typeof day.day === "number" ? day.day : index + 1,
+      }));
+
+      const byNum = new Map<number, any>();
+      numbered.forEach((d) => {
+        if (!byNum.has(d.num)) {
+          byNum.set(d.num, d.value);
+        }
+      });
+
+      const reordered: any[] = [];
+      order.forEach((num) => {
+        const d = byNum.get(num);
+        if (d) {
+          reordered.push(d);
+          byNum.delete(num);
+        }
+      });
+
+      byNum.forEach((d) => reordered.push(d));
+
+      const updatedItinerary: ItineraryData = {
+        ...itinerary,
+        days: reordered,
+      };
+
+      setItinerary(updatedItinerary);
+    };
+
     return (
       <>
         {showConfetti && (
@@ -231,6 +267,8 @@ export default function Home() {
                   group={meta.travelersDescription}
                   days={daysForTimeline}
                 />
+
+                <Flowchart days={daysForTimeline} onReorderDays={handleReorderDays} />
               </div>
 
               <div className="order-1 lg:order-2">

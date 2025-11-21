@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateTripPlan } from "@/lib/ai";
 
+// Use Node.js runtime (not edge) for longer timeouts and dynamic env vars
+export const runtime = "nodejs";
 // Increase timeout for Vercel (max 60s for Hobby, 300s for Pro)
 export const maxDuration = 120; // 2 minutes - more reasonable timeout
 
@@ -33,9 +35,18 @@ export async function POST(request: NextRequest) {
     }
     
     console.log("Generating trip plan for:", body.destination);
+    console.log("API key present:", !!apiKey, "Length:", apiKey?.length);
+    
     const result = await generateTripPlan(body);
     console.log("Trip plan generated successfully");
-    return NextResponse.json(result);
+    
+    return NextResponse.json(result, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+      },
+    });
   } catch (error: any) {
     console.error("Trip generation error:", error);
     console.error("Error stack:", error.stack);

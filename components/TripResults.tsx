@@ -16,6 +16,7 @@ import ButterflyConfetti from "./magic/ButterflyConfetti";
 import SidebarAIChat from "./magic/SidebarAIChat";
 import BookingIframes from "./BookingIframes";
 import ItineraryFlowchart from "./itinerary/ItineraryFlowchart";
+import TimelineItinerary from "./itinerary/TimelineItinerary";
 import InteractiveMapFlowchart from "./map/InteractiveMapFlowchart";
 import { getDestinationImage } from "@/lib/images";
 import { toast } from "sonner";
@@ -493,29 +494,49 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
                         </motion.div>
                       )}
 
-                      {/* Itinerary Flowchart */}
-                      {data.itineraries && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.45 }}
-                          className="mb-8"
-                        >
-                          <div className="bg-white rounded-2xl p-6 shadow-xl border-2 border-purple-200">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                              <Calendar className="w-6 h-6 text-purple-600" />
-                              Your Trip Flowchart
-                            </h2>
-                            <ItineraryFlowchart
-                              itineraries={data.itineraries}
-                              activeTab={activeTab}
-                              onNodeClick={(nodeId) => {
-                                toast.info(`Clicked: ${nodeId}`);
-                              }}
-                            />
-                          </div>
-                        </motion.div>
-                      )}
+                    {/* Timeline Itinerary (Grok-style) */}
+                    {data.itineraries && data.itineraries[activeTab] && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.45 }}
+                        className="mb-8"
+                      >
+                        <TimelineItinerary
+                          destination={data.destination}
+                          startDate={data.dates.start}
+                          endDate={data.dates.end}
+                          travelers={data.travelers}
+                          group={data.group}
+                          days={data.itineraries[activeTab]}
+                          weather={data.weather}
+                        />
+                      </motion.div>
+                    )}
+
+                    {/* Itinerary Flowchart (Alternative View) */}
+                    {data.itineraries && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        className="mb-8"
+                      >
+                        <div className="bg-white rounded-2xl p-6 shadow-xl border-2 border-purple-200">
+                          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <Calendar className="w-6 h-6 text-purple-600" />
+                            Your Trip Flowchart
+                          </h2>
+                          <ItineraryFlowchart
+                            itineraries={data.itineraries}
+                            activeTab={activeTab}
+                            onNodeClick={(nodeId) => {
+                              toast.info(`Clicked: ${nodeId}`);
+                            }}
+                          />
+                        </div>
+                      </motion.div>
+                    )}
 
                       {/* Itinerary Tabs (Fallback/Detailed View) */}
           {data.itineraries && (

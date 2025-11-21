@@ -32,7 +32,6 @@ export default function Home() {
   const [travelersDescription, setTravelersDescription] = useState("2 adults");
   const [budgetLevel, setBudgetLevel] = useState("Mid");
   const [pace, setPace] = useState("Balanced");
-  const [openaiKey, setOpenaiKey] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Smooth scroll setup
@@ -43,12 +42,6 @@ export default function Home() {
     tomorrow.setDate(tomorrow.getDate() + 7);
     if (!startDate) {
       setStartDate(tomorrow.toISOString().split("T")[0]);
-    }
-    if (typeof window !== "undefined") {
-      const savedKey = localStorage.getItem("openai_api_key");
-      if (savedKey) {
-        setOpenaiKey(savedKey);
-      }
     }
   }, [startDate]);
 
@@ -76,7 +69,6 @@ export default function Home() {
           travelersDescription,
           budgetLevel,
           pace,
-          openaiKey: openaiKey || undefined,
         }),
         signal: controller.signal,
         cache: "no-store",
@@ -113,14 +105,6 @@ export default function Home() {
 
       if (!dataItinerary || !dataMeta) {
         throw new Error("Server returned an incomplete itinerary. Please try again.");
-      }
-
-      if (openaiKey) {
-        try {
-          localStorage.setItem("openai_api_key", openaiKey);
-        } catch {
-          // ignore storage errors
-        }
       }
 
       // Cherry blossom reveal animation - use requestAnimationFrame to avoid React 423 error
@@ -589,7 +573,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-semibold text-gray-100 mb-3">
                     <Gauge className="w-5 h-5 text-pink-300" />
@@ -604,19 +588,6 @@ export default function Home() {
                     <option value="Balanced">Balanced</option>
                     <option value="Packed">Packed</option>
                   </select>
-                </div>
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-100 mb-3">
-                    <Sparkles className="w-5 h-5 text-purple-300" />
-                    OpenAI API Key <span className="text-xs text-gray-300 font-normal">(optional - saved locally)</span>
-                  </label>
-                  <input
-                    type="password"
-                    value={openaiKey}
-                    onChange={(e) => setOpenaiKey(e.target.value)}
-                    className="relative w-full px-6 py-4 rounded-2xl border-2 border-purple-200/50 bg-white/80 backdrop-blur-xl focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-200/50 transition-all text-sm font-mono text-gray-900"
-                    placeholder="sk-... (optional - will use server key if not provided)"
-                  />
                 </div>
               </div>
 

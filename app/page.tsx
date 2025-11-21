@@ -13,6 +13,7 @@ const Globe3D = dynamic(() => import("@/components/magic/Globe3D"), {
 });
 import { Sparkles } from "lucide-react";
 import { useSmoothScroll } from "@/hooks/useSmoothScroll";
+import { toast } from "sonner";
 
 // Dynamically import heavy components
 const Confetti = dynamic(() => import("react-confetti"), { ssr: false });
@@ -34,7 +35,7 @@ export default function Home() {
     try {
       // Create AbortController for timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout (matches Vercel Pro limit)
 
       const response = await fetch("/api/trip", {
         method: "POST",
@@ -83,7 +84,10 @@ export default function Home() {
         errorMessage = error.message;
       }
       
-      alert(`Failed to generate trip plan: ${errorMessage}\n\nPlease check:\n1. Your OpenAI API key is set correctly\n2. You have API credits available\n3. Your internet connection is stable\n4. The server is running properly`);
+      toast.error("Failed to generate trip plan", {
+        description: `${errorMessage}\n\nPlease check:\n1. Your OpenAI API key is set correctly\n2. You have API credits available\n3. Your internet connection is stable\n4. The server is running properly`,
+        duration: 15000,
+      });
     } finally {
       setLoading(false);
     }

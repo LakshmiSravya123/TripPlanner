@@ -64,12 +64,39 @@ export async function generateTripPlan(formData: TripFormData) {
     ? weatherData.map((w, i) => `Day ${i + 1} (${w.date}): ${w.min}–${w.max}°C, ${w.condition}`).join("\n")
     : "Weather data unavailable. Using general seasonal guidance.";
 
-  // Search for current prices and events
-  const jrPassInfo = destination.toLowerCase().includes('japan') 
-    ? await searchCurrentPrice('JR Pass', 'Japan')
-    : '';
-  const currentEvents = await searchTravelInfo(destination, 'current events 2025');
-  const currentPrices = await searchTravelInfo(destination, 'current prices 2025');
+  // Search for current prices and events (with timeout to prevent hanging)
+  let jrPassInfo = '';
+  let currentEvents = '';
+  let currentPrices = '';
+  
+  try {
+    if (destination.toLowerCase().includes('japan')) {
+      jrPassInfo = await Promise.race([
+        searchCurrentPrice('JR Pass', 'Japan'),
+        new Promise<string>((resolve) => setTimeout(() => resolve(''), 5000)) // 5s timeout
+      ]);
+    }
+  } catch (e) {
+    console.warn('JR Pass search failed:', e);
+  }
+  
+  try {
+    currentEvents = await Promise.race([
+      searchTravelInfo(destination, 'current events 2025'),
+      new Promise<string>((resolve) => setTimeout(() => resolve(''), 5000))
+    ]);
+  } catch (e) {
+    console.warn('Current events search failed:', e);
+  }
+  
+  try {
+    currentPrices = await Promise.race([
+      searchTravelInfo(destination, 'current prices 2025'),
+      new Promise<string>((resolve) => setTimeout(() => resolve(''), 5000))
+    ]);
+  } catch (e) {
+    console.warn('Current prices search failed:', e);
+  }
 
   const groupDescription = group || `${travelers} ${travelers === 1 ? 'adult' : 'adults'}`;
   const budgetDescription = budget || (calculatedBudgetPerNight ? `$${calculatedBudgetPerNight}/night` : 'mid-range');

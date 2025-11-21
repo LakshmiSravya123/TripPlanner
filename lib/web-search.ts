@@ -2,7 +2,7 @@
 export async function searchWeb(query: string): Promise<string> {
   try {
     // Use a web search API (you can use SerpAPI, Google Custom Search, etc.)
-    // For now, we'll use a simple fetch to a search API
+    // For now, we'll use a simple fetch to a search API with timeout
     // Note: In production, you'd want to use a proper search API with an API key
     
     // Example: Using DuckDuckGo Instant Answer API (no key required, but limited)
@@ -11,11 +11,17 @@ export async function searchWeb(query: string): Promise<string> {
     const searchUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+      
       const response = await fetch(searchUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; TripPlanner/1.0)',
         },
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         throw new Error('Search API failed');
@@ -36,9 +42,13 @@ export async function searchWeb(query: string): Promise<string> {
       }
       
       return result || `Search results for: ${query}`;
-    } catch (error) {
+    } catch (error: any) {
       // Fallback: return a generic message
-      console.warn('Web search failed, using fallback:', error);
+      if (error.name === 'AbortError') {
+        console.warn('Web search timed out:', query);
+      } else {
+        console.warn('Web search failed, using fallback:', error);
+      }
       return `Current information about: ${query}. Please verify prices and events from official sources.`;
     }
   } catch (error) {

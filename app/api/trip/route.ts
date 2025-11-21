@@ -4,7 +4,8 @@ import { generateTripPlan } from "@/lib/ai";
 // Use Node.js runtime (not edge) for longer timeouts and dynamic env vars
 export const runtime = "nodejs";
 // Increase timeout for Vercel (max 60s for Hobby, 300s for Pro)
-export const maxDuration = 60; // 1 minute - Vercel Hobby limit
+// Set to 120s to match client timeout - requires Vercel Pro plan for >60s
+export const maxDuration = 120; // 2 minutes - requires Pro plan
 
 export async function POST(request: NextRequest) {
   try {

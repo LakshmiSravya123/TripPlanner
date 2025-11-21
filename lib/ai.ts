@@ -278,7 +278,7 @@ Return the JSON now:`;
     fetch: (url, options) => {
       // Add timeout and better error handling for Vercel
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 110000); // 110s timeout (just under 120s max)
       
       return fetch(url, {
         ...options,
@@ -309,6 +309,7 @@ Return the JSON now:`;
     let text: string;
     
     // Use p-retry for automatic retries with exponential backoff
+    // Reduce retries to 2 to avoid timeout issues
     try {
       text = await pRetry(
         async () => {
@@ -317,7 +318,7 @@ Return the JSON now:`;
             system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
             prompt: reasoningPrompt,
             temperature: 0.3, // Lower temperature for more consistent JSON output
-            maxTokens: 6000, // Reduced to prevent token overflow
+            maxTokens: 5000, // Reduced further to speed up generation
           });
           
           const content = result.text;
@@ -349,7 +350,7 @@ Now generate the detailed itinerary with these specific details:`;
               system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
               prompt: chainOfThoughtPrompt,
               temperature: 0.3,
-              maxTokens: 6000,
+              maxTokens: 5000, // Reduced to speed up generation
             });
             
             const retryContent = retryResult.text;
@@ -362,7 +363,9 @@ Now generate the detailed itinerary with these specific details:`;
           return content;
         },
         {
-          retries: 3,
+          retries: 2, // Reduced from 3 to avoid timeout
+          minTimeout: 1000, // Start with 1s delay
+          maxTimeout: 5000, // Max 5s delay between retries
           onFailedAttempt: (errorInfo) => {
             const errorMessage = (errorInfo as any).error?.message || String((errorInfo as any).error || errorInfo);
             console.error(`Attempt ${errorInfo.attemptNumber} failed. ${errorInfo.retriesLeft} retries left.`, errorMessage);

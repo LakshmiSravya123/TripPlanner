@@ -358,69 +358,9 @@ Now generate the detailed itinerary with these specific details:`;
       try {
         result = JSON.parse(fixedJson);
       } catch (retryError: any) {
-        // Last resort: create a fallback structure with the data we have
-        console.error("All JSON parsing attempts failed. Creating fallback structure.");
-        result = {
-          destination,
-          description: `A beautiful trip to ${destination}`,
-          inspiration: [
-            `Discover the rich culture and history of ${destination}`,
-            `Experience world-class cuisine and local flavors`,
-            `Explore stunning architecture and iconic landmarks`,
-          ],
-          places: [],
-          dates: { start: startDate, end: endDate },
-          travelers,
-          weather: weatherData,
-          flights: {
-            economy: { airline: "Major Airline", priceRange: "$600-900", duration: "8h 30m", link: googleFlightsLink },
-            comfort: { airline: "Major Airline", priceRange: "$900-1200", duration: "8h 30m", link: googleFlightsLink },
-            premium: { airline: "Major Airline", priceRange: "$1200-1800", duration: "8h 30m", link: googleFlightsLink },
-          },
-          hotels: {
-            budget: [{ name: "Budget Hotel", location: "City Center", priceRange: `$${Math.round(calculatedBudgetPerNight * 0.7)}-$${Math.round(calculatedBudgetPerNight * 0.9)}`, rating: 4.2, link: bookingBudgetLink }],
-            midRange: [{ name: "Mid-Range Hotel", location: "City Center", priceRange: `$${Math.round(calculatedBudgetPerNight * 1.1)}-$${Math.round(calculatedBudgetPerNight * 1.3)}`, rating: 4.6, link: bookingMidLink }],
-            luxury: [{ name: "Luxury Hotel", location: "Prime Location", priceRange: `$${Math.round(calculatedBudgetPerNight * 1.5)}-$${Math.round(calculatedBudgetPerNight * 2)}`, rating: 4.8, link: bookingLuxuryLink }],
-          },
-          itineraries: {
-            economic: Array.from({ length: numDays }, (_, i) => ({
-              day: i + 1,
-              date: new Date(new Date(startDate).getTime() + i * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-              activities: ["Morning: Explore local attractions - 9AM - $20", "Afternoon: Visit museums - 2PM - $30", "Evening: Enjoy local cuisine - 7PM - $25"],
-            })),
-            balanced: Array.from({ length: numDays }, (_, i) => ({
-              day: i + 1,
-              date: new Date(new Date(startDate).getTime() + i * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-              activities: ["Morning: Guided tour - 9AM - $40", "Afternoon: Cultural experience - 2PM - $50", "Evening: Fine dining - 7PM - $60"],
-            })),
-            luxury: Array.from({ length: numDays }, (_, i) => ({
-              day: i + 1,
-              date: new Date(new Date(startDate).getTime() + i * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-              title: `Day ${i + 1}`,
-              activities: [
-                {
-                  time: "9:00",
-                  title: "Private tour",
-                  location: "City center",
-                  description: "Exclusive private guided experience",
-                  transportation: "Private car",
-                  cost: "$80",
-                  tips: "Book in advance"
-                }
-              ],
-              dailyTotal: "$200-300"
-            })),
-          },
-          tips: [
-            "Book popular attractions in advance",
-            "Check current events and seasonal considerations"
-          ],
-          costs: {
-            economic: { perPerson: "$800-1200", total: `$${800 * travelers}-$${1200 * travelers}` },
-            balanced: { perPerson: "$1200-1800", total: `$${1200 * travelers}-$${1800 * travelers}` },
-            luxury: { perPerson: "$2000-3000", total: `$${2000 * travelers}-$${3000 * travelers}` },
-          },
-        };
+        // Last resort: throw error instead of using generic fallback
+        console.error("All JSON parsing attempts failed. Full response:", text.substring(0, 1000));
+        throw new Error("Failed to parse AI response. The AI may have returned invalid JSON. Please try again.");
       }
     }
     

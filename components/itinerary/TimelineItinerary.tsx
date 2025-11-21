@@ -125,9 +125,9 @@ export default function TimelineItinerary({
     }
   };
 
-  // Build booking links
-  const googleFlightsLink = `https://www.google.com/travel/flights?q=Flights+to+${encodeURIComponent(destination)}+on+${startDate}`;
-  const bookingLink = `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(destination)}&checkin=${startDate}&checkout=${endDate}&group_adults=${travelers}`;
+  // Build booking links with proper dynamic parameters
+  const googleFlightsLink = `https://www.google.com/travel/flights?q=Flights%20to%20${encodeURIComponent(destination)}%20on%20${startDate}&hl=en`;
+  const bookingLink = `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(destination)}&checkin=${startDate}&checkout=${endDate}&group_adults=${travelers}&no_rooms=1&group_children=0`;
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-12" id="trip-itinerary-timeline">

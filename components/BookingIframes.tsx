@@ -230,7 +230,8 @@ export default function BookingIframes({
                     title="Google Flights"
                     allow="fullscreen"
                     allowFullScreen
-                    loading="eager"
+                    loading="lazy"
+                    frameBorder="0"
                     onLoad={() => {
                       setTimeout(() => handleIframeLoad("flights"), 2000);
                     }}
@@ -349,7 +350,8 @@ export default function BookingIframes({
                     title="Booking.com Hotels"
                     allow="fullscreen"
                     allowFullScreen
-                    loading="eager"
+                    loading="lazy"
+                    frameBorder="0"
                     onLoad={() => {
                       setTimeout(() => handleIframeLoad("hotels"), 2000);
                     }}

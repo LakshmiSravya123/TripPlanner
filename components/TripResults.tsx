@@ -37,6 +37,7 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
   const [showCherryBlossom, setShowCherryBlossom] = useState(true);
   const [showButterflies, setShowButterflies] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [hideIntro, setHideIntro] = useState(true); // Hide "Why Visit" and intro sections by default
   const backgroundImage = getDestinationImage(data.destination);
 
   const handleSaveTrip = () => {
@@ -135,7 +136,7 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back
                   </Button>
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 flex-wrap">
                         <Button
                           onClick={handleSaveTrip}
                           className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white backdrop-blur-sm shadow-xl"
@@ -159,6 +160,15 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
                           <FolderOpen className="w-4 h-4 mr-2" />
                           My Trips
                         </Button>
+                        <label className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg px-3 py-2 text-white text-sm cursor-pointer hover:bg-white/20 transition">
+                          <input
+                            type="checkbox"
+                            checked={hideIntro}
+                            onChange={(e) => setHideIntro(e.target.checked)}
+                            className="w-4 h-4 rounded"
+                          />
+                          <span>Hide Intro Sections</span>
+                        </label>
                       </div>
                 </div>
                 
@@ -246,18 +256,20 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
                       />
             </motion.div>
 
-            {/* Enhanced Destination Map */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <EnhancedDestinationMap
-                destination={data.destination}
-                places={data.places}
-                description={data.description}
-              />
-            </motion.div>
+            {/* Enhanced Destination Map - Hidden by default (hideIntro) */}
+            {!hideIntro && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <EnhancedDestinationMap
+                  destination={data.destination}
+                  places={data.places}
+                  description={data.description}
+                />
+              </motion.div>
+            )}
 
             {/* Weather Forecast */}
             {data.weather && data.weather.length > 0 && (
@@ -470,8 +482,8 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
             </motion.div>
           )}
 
-                      {/* Interactive Map with Flowchart Overlay */}
-                      {data.places && data.places.length > 0 && (
+                      {/* Interactive Map with Flowchart Overlay - Hidden if hideIntro */}
+                      {!hideIntro && data.places && data.places.length > 0 && (
                         <motion.div
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}

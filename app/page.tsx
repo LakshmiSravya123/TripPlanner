@@ -11,7 +11,7 @@ const Globe3D = dynamic(() => import("@/components/magic/Globe3D"), {
   ssr: false,
   loading: () => <div className="w-full h-full flex items-center justify-center"><div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>
 });
-import { Sparkles } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { useSmoothScroll } from "@/hooks/useSmoothScroll";
 import { toast } from "sonner";
 
@@ -213,7 +213,7 @@ export default function Home() {
           </motion.div>
         </motion.div>
 
-        {/* Loading Phoenix Animation */}
+        {/* Loading Animation */}
         <AnimatePresence>
           {loading && (
             <motion.div
@@ -235,7 +235,7 @@ export default function Home() {
                   }}
                   className="mb-8"
                 >
-                  <Sparkles className="w-24 h-24 text-yellow-400 mx-auto" />
+                  <Loader2 className="w-24 h-24 text-purple-400 mx-auto animate-spin" />
                 </motion.div>
                 <motion.p
                   initial={{ opacity: 0 }}
@@ -244,8 +244,16 @@ export default function Home() {
                 >
                   Creating your magical trip...
                 </motion.p>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-purple-200 text-sm"
+                >
+                  This may take a moment while the AI generates your detailed itinerary
+                </motion.p>
                 <motion.div
-                  className="flex gap-2 justify-center"
+                  className="flex gap-2 justify-center mt-6"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.5 }}

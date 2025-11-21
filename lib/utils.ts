@@ -17,7 +17,8 @@ export function buildGoogleFlightsLink(
   const destCode = getAirportCode(destination);
   // Google Flights URL - using airport codes for better results
   // Format: https://www.google.com/travel/flights?q=Flights%20from%20JFK%20to%20ZAG%20on%202025-06-15%20through%202025-06-20
-  return `https://www.google.com/travel/flights?q=Flights%20from%20${origin}%20to%20${destCode}%20on%20${startDate}%20through%20${endDate}&num=${travelers}`;
+  // Alternative format that works better: https://www.google.com/travel/flights?q=Flights%20to%20Tokyo%20on%202025-11-21
+  return `https://www.google.com/travel/flights?q=Flights%20to%20${encodeURIComponent(destination)}%20on%20${startDate}&hl=en`;
 }
 
 export function buildBookingLink(

@@ -114,14 +114,40 @@ export async function generateTripPlan(formData: TripFormData) {
     // Ultra-fast generation with better error handling
     const result = await generateText({
       model: openaiClient("gpt-4o-mini"),
-      system: "Return ONLY valid JSON. No markdown.",
-      prompt: `Create ${numDays}-day itinerary for ${destination}, ${startDate}, ${groupDescription}, ${budgetDescription}. Weather: ${weatherSummary}. 
+      system: "You are a JSON generator. Return ONLY valid JSON. No text before or after. No markdown. No explanations. Start with { and end with }. Ensure all strings are properly quoted and escaped.",
+      prompt: `Generate a ${numDays}-day travel itinerary for ${destination} (${startDate} to ${endDate}) for ${groupDescription}. Budget: ${budgetDescription}. Weather: ${weatherSummary}.
 
-Return JSON: {"destination":"${destination}","description":"Brief overview","overview":{"budget":{"total":"$${Math.round((calculatedBudgetPerNight * numDays + 300) * travelers)}"},"transportPass":"Pass recommendation","practicalInfo":["Currency","Tips"]},"places":[{"name":"Main Attraction","type":"landmark","coordinates":[0,0]}],"dates":{"start":"${startDate}","end":"${endDate}"},"travelers":${travelers},"weather":${JSON.stringify(weatherData)},"flights":{"economy":{"airline":"Airline","priceRange":"$600-900","link":"${googleFlightsLink}"}},"hotels":{"midRange":[{"name":"Hotel","priceRange":"$${calculatedBudgetPerNight}","link":"${bookingMidLink}"}]},"itineraries":{"balanced":[]},"tips":["Tip 1"],"costs":{"balanced":{"total":"$${1200 * travelers}"}}}
+CRITICAL: Return ONLY valid JSON. No markdown blocks. No explanations.
 
-Make ${numDays + 1} days in balanced array. Each day: {"day":0,"date":"${startDate}","title":"Arrival","activities":[{"time":"2PM","title":"Check-in","location":"Hotel","description":"Arrive and settle","cost":"$0"}],"dailyTotal":"$50"}. Use real places/prices.`,
-      temperature: 0.7, // Slightly lower for more consistent results
-      maxTokens: 2000, // Slightly higher for complete responses
+Required JSON structure:
+{
+  "destination": "${destination}",
+  "description": "Brief trip overview",
+  "overview": {
+    "budget": {"total": "$${Math.round((calculatedBudgetPerNight * numDays + 300) * travelers)}"},
+    "transportPass": "Transport recommendation",
+    "practicalInfo": ["Currency info", "Local tips"]
+  },
+  "places": [{"name": "Main Attraction", "type": "landmark", "coordinates": [0, 0]}],
+  "dates": {"start": "${startDate}", "end": "${endDate}"},
+  "travelers": ${travelers},
+  "weather": ${JSON.stringify(weatherData)},
+  "flights": {
+    "economy": {"airline": "Major Airlines", "priceRange": "$600-900", "duration": "8h", "link": "${googleFlightsLink}"}
+  },
+  "hotels": {
+    "midRange": [{"name": "Recommended Hotel", "location": "City Center", "priceRange": "$${calculatedBudgetPerNight}", "rating": 4.5, "link": "${bookingMidLink}"}]
+  },
+  "itineraries": {
+    "balanced": []
+  },
+  "tips": ["Practical travel tip"],
+  "costs": {"balanced": {"total": "$${1200 * travelers}"}}
+}
+
+Fill balanced array with ${numDays + 1} days (day 0 = arrival). Each day needs: day, date, title, activities array, dailyTotal. Each activity needs: time, title, location, description, cost.`,
+      temperature: 0.5, // Lower for more consistent JSON
+      maxTokens: 1800, // Smaller to reduce truncation issues
     });
 
     let text = result.text?.trim();
@@ -130,35 +156,104 @@ Make ${numDays + 1} days in balanced array. Each day: {"day":0,"date":"${startDa
       throw new Error("Empty response from AI service");
     }
     
-    // Robust JSON extraction
-    let jsonString = text;
+    // Ultra-robust JSON extraction with extensive debugging
+    console.log("=== AI Response Debug ===");
+    console.log("Raw response length:", text.length);
+    console.log("Raw response (first 500 chars):", text.substring(0, 500));
+    console.log("Raw response (last 200 chars):", text.substring(Math.max(0, text.length - 200)));
     
-    // Remove any markdown code blocks
-    jsonString = jsonString.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+    let jsonString = text.trim();
     
-    // Find JSON boundaries more reliably
+    // Step 1: Remove markdown code blocks
+    const beforeMarkdown = jsonString;
+    jsonString = jsonString.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+    if (beforeMarkdown !== jsonString) {
+      console.log("Removed markdown blocks");
+    }
+    
+    // Step 2: Find JSON boundaries
     const start = jsonString.indexOf("{");
     const end = jsonString.lastIndexOf("}");
     
+    console.log("JSON boundaries:", { start, end, length: jsonString.length });
+    
     if (start === -1 || end === -1 || start >= end) {
-      console.error("Invalid JSON boundaries in response:", text.substring(0, 200));
-      throw new Error("Invalid response format from AI service");
+      console.error("❌ Invalid JSON boundaries");
+      console.error("Full response:", text);
+      throw new Error("No valid JSON found in AI response. The AI returned text instead of JSON.");
     }
     
+    // Step 3: Extract JSON
     jsonString = jsonString.substring(start, end + 1);
+    console.log("Extracted JSON length:", jsonString.length);
+    console.log("Extracted JSON (first 300 chars):", jsonString.substring(0, 300));
     
-    // Clean up common JSON issues
-    jsonString = jsonString.replace(/,(\s*[}\]])/g, "$1"); // Fix trailing commas
-    jsonString = jsonString.replace(/\n/g, ' '); // Remove newlines that might break parsing
-    jsonString = jsonString.replace(/\s+/g, ' '); // Normalize whitespace
+    // Step 4: Progressive JSON cleanup
+    const originalJson = jsonString;
     
+    // Fix trailing commas (multiple passes)
+    let prevLength;
+    do {
+      prevLength = jsonString.length;
+      jsonString = jsonString.replace(/,(\s*[}\]])/g, "$1");
+    } while (jsonString.length !== prevLength);
+    
+    // Fix common JSON issues
+    jsonString = jsonString.replace(/([^\\])\\n/g, '$1\\\\n'); // Fix unescaped newlines
+    jsonString = jsonString.replace(/([^\\])\\t/g, '$1\\\\t'); // Fix unescaped tabs
+    jsonString = jsonString.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, ''); // Remove control chars
+    
+    if (originalJson !== jsonString) {
+      console.log("Applied JSON cleanup");
+    }
+    
+    // Step 5: Attempt parsing with detailed error reporting
     let parsedResult;
     try {
       parsedResult = JSON.parse(jsonString);
-    } catch (parseError) {
-      console.error("JSON parse error:", parseError);
-      console.error("Problematic JSON:", jsonString.substring(0, 500));
-      throw new Error("Invalid JSON response from AI service");
+      console.log("✅ JSON parsed successfully");
+    } catch (parseError: any) {
+      console.error("❌ JSON Parse Failed");
+      console.error("Parse error:", parseError.message);
+      
+      // Try to identify the error location
+      const errorMatch = parseError.message.match(/position (\d+)/);
+      if (errorMatch) {
+        const pos = parseInt(errorMatch[1]);
+        console.error("Error at position:", pos);
+        console.error("Context around error:", jsonString.substring(Math.max(0, pos - 50), pos + 50));
+      }
+      
+      console.error("Cleaned JSON (first 1000 chars):", jsonString.substring(0, 1000));
+      
+      // Try aggressive fixes
+      let fixedJson = jsonString;
+      
+      // Fix unbalanced brackets
+      const openBraces = (fixedJson.match(/\{/g) || []).length;
+      const closeBraces = (fixedJson.match(/\}/g) || []).length;
+      const openBrackets = (fixedJson.match(/\[/g) || []).length;
+      const closeBrackets = (fixedJson.match(/\]/g) || []).length;
+      
+      console.log("Bracket counts:", { openBraces, closeBraces, openBrackets, closeBrackets });
+      
+      if (openBraces > closeBraces) {
+        fixedJson += "}".repeat(openBraces - closeBraces);
+        console.log("Added missing closing braces");
+      }
+      if (openBrackets > closeBrackets) {
+        fixedJson += "]".repeat(openBrackets - closeBrackets);
+        console.log("Added missing closing brackets");
+      }
+      
+      try {
+        parsedResult = JSON.parse(fixedJson);
+        console.log("✅ JSON parsed after bracket fixes");
+      } catch (retryError: any) {
+        console.error("❌ All JSON parsing attempts failed");
+        console.error("Final error:", retryError.message);
+        throw new Error(`Invalid JSON from AI: ${parseError.message}. Please try again or use a simpler request.`);
+      }
     }
     
     // Validate and ensure required structure

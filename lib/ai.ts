@@ -179,6 +179,9 @@ REQUIREMENTS:
 - Include vegetarian options if relevant
 
 CRITICAL: Return ONLY valid JSON with no comments, no markdown, no extra text. The JSON must be parseable.
+DO NOT include any explanatory text before or after the JSON.
+DO NOT wrap the JSON in markdown code blocks.
+START your response with { and END with }.
 
 Return this exact JSON structure:
 {
@@ -282,7 +285,7 @@ Return the JSON now:`;
       model: openai("gpt-4o-mini"),
       prompt: reasoningPrompt,
       temperature: 0.7,
-      maxTokens: 6000, // Increased significantly for detailed itineraries
+      maxTokens: 8000, // Increased for more detailed content
     });
     
     // If response is too generic, retry with chain-of-thought
@@ -321,8 +324,23 @@ Now generate the detailed itinerary with these specific details:`;
     // Clean and parse JSON response
     let jsonText = text.trim();
     
+    // Log the raw response for debugging (first 1000 chars)
+    console.log("Raw AI response (first 1000 chars):", jsonText.substring(0, 1000));
+    
     // Remove markdown code blocks if present
     jsonText = jsonText.replace(/```json\n?/g, "").replace(/```\n?/g, "");
+    
+    // Remove any text before the first {
+    const firstBrace = jsonText.indexOf("{");
+    if (firstBrace > 0) {
+      jsonText = jsonText.substring(firstBrace);
+    }
+    
+    // Remove any text after the last }
+    const lastBrace = jsonText.lastIndexOf("}");
+    if (lastBrace !== -1 && lastBrace < jsonText.length - 1) {
+      jsonText = jsonText.substring(0, lastBrace + 1);
+    }
     
     // Find JSON object - try multiple patterns
     let jsonMatch = jsonText.match(/\{[\s\S]*\}/);
@@ -335,8 +353,8 @@ Now generate the detailed itinerary with these specific details:`;
     }
     
     if (!jsonMatch) {
-      console.error("No JSON found. Response text:", text.substring(0, 500));
-      throw new Error("No valid JSON found in AI response. Please try again.");
+      console.error("No JSON found. Full response text:", text);
+      throw new Error("No valid JSON found in AI response. The AI may have returned text instead of JSON. Please try again.");
     }
     
     let jsonString = jsonMatch[0];
@@ -351,8 +369,12 @@ Now generate the detailed itinerary with these specific details:`;
     jsonString = jsonString.replace(/\/\/.*$/gm, "");
     jsonString = jsonString.replace(/\/\*[\s\S]*?\*\//g, "");
     
-    // Fix unescaped newlines in strings
-    jsonString = jsonString.replace(/("(?:[^"\\]|\\.)*")\s*\n\s*/g, "$1 ");
+    // Fix unescaped newlines in strings - be more careful
+    // Replace newlines inside string values with \n
+    jsonString = jsonString.replace(/([^\\])"([^"]*)\n([^"]*)"/g, '$1"$2\\n$3"');
+    
+    // Fix control characters (but keep \n and \t)
+    jsonString = jsonString.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '');
     
     let result;
     try {
@@ -363,6 +385,7 @@ Now generate the detailed itinerary with these specific details:`;
       console.error("Error position:", errorPos);
       console.error("JSON around error:", jsonString.substring(Math.max(0, errorPos - 200), errorPos + 200));
       console.error("Full JSON length:", jsonString.length);
+      console.error("Full JSON (first 2000 chars):", jsonString.substring(0, 2000));
       
       // Try one more aggressive fix - remove problematic characters
       let fixedJson = jsonString;

@@ -139,7 +139,17 @@ export default function Home() {
             )}
           </div>
         )}
-        <TripResults data={tripData} onBack={() => setTripData(null)} />
+        <TripResults 
+          data={tripData} 
+          onBack={() => {
+            try {
+              setTripData(null);
+            } catch (error) {
+              console.error('Error clearing trip data:', error);
+              window.location.reload();
+            }
+          }} 
+        />
       </>
     );
   }

@@ -24,6 +24,20 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error('Error stack:', error.stack);
+    console.error('Component stack:', errorInfo.componentStack);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    
+    // Send error to console for debugging
+    if (typeof window !== 'undefined') {
+      console.group('🚨 React Error Boundary Triggered');
+      console.error('Error:', error);
+      console.error('Error Info:', errorInfo);
+      console.error('User Agent:', navigator.userAgent);
+      console.error('URL:', window.location.href);
+      console.groupEnd();
+    }
   }
 
   render() {

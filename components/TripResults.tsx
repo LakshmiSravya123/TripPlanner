@@ -33,12 +33,35 @@ interface TripResultsProps {
 }
 
 export default function TripResults({ data, onBack }: TripResultsProps) {
+  // React hooks must be called first, before any conditional returns
   const [activeTab, setActiveTab] = useState<"economic" | "balanced" | "luxury">("balanced");
   const [showCherryBlossom, setShowCherryBlossom] = useState(true);
   const [showButterflies, setShowButterflies] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [hideIntro, setHideIntro] = useState(true); // Hide "Why Visit" and intro sections by default
-  const backgroundImage = getDestinationImage(data.destination);
+  
+  // Add safety checks for data after hooks
+  if (!data) {
+    console.error('TripResults: No data provided');
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="text-center p-8 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
+          <h2 className="text-2xl font-bold text-white mb-4">No Trip Data</h2>
+          <p className="text-gray-300 mb-6">No trip data was provided. Please try generating a trip again.</p>
+          <button
+            onClick={onBack}
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Safe property access with fallbacks
+  const destination = data.destination || 'Unknown Destination';
+  const backgroundImage = getDestinationImage(destination);
 
   const handleSaveTrip = () => {
     try {
@@ -64,7 +87,8 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
     try {
       const contentElement = document.getElementById('trip-content');
       if (contentElement) {
-        exportToPDF(contentElement, `trip-${data.destination}-${data.dates.start}.pdf`)
+        const fileName = `trip-${destination}-${data.dates?.start || 'unknown'}.pdf`;
+        exportToPDF(contentElement, fileName)
           .then(() => {
             toast.success("PDF exported successfully! 📄", {
               description: "Your itinerary has been exported",
@@ -72,6 +96,7 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
             });
           })
           .catch((error) => {
+            console.error('PDF export error:', error);
             toast.error("Failed to export PDF", {
               description: error.message || "Please try again",
             });
@@ -88,30 +113,32 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
     }
   };
 
-  return (
-    <>
-      {/* AI Chat - Always visible */}
-      {showConfetti && (
-        <Confetti
-          width={typeof window !== "undefined" ? window.innerWidth : 0}
-          height={typeof window !== "undefined" ? window.innerHeight : 0}
-          recycle={false}
-          numberOfPieces={300}
-          gravity={0.2}
-        />
-      )}
-      <ButterflyConfetti trigger={showButterflies} />
-      {typeof window !== "undefined" && (
-        <SidebarAIChat 
-          tripData={data} 
-          onRegenerateDay={(day, content) => {
-            toast.info(`Regenerating Day ${day}...`);
-          }}
-          onRegenerateFull={() => {
-            toast.info("Regenerating full plan...");
-          }}
-        />
-      )}
+  // Add error handling for render
+  try {
+    return (
+      <>
+        {/* AI Chat - Always visible */}
+        {showConfetti && typeof window !== "undefined" && (
+          <Confetti
+            width={window.innerWidth}
+            height={window.innerHeight}
+            recycle={false}
+            numberOfPieces={300}
+            gravity={0.2}
+          />
+        )}
+        <ButterflyConfetti trigger={showButterflies} />
+        {typeof window !== "undefined" && (
+          <SidebarAIChat 
+            tripData={data} 
+            onRegenerateDay={(day, content) => {
+              toast.info(`Regenerating Day ${day}...`);
+            }}
+            onRegenerateFull={() => {
+              toast.info("Regenerating full plan...");
+            }}
+          />
+        )}
       {showCherryBlossom ? (
         <CherryBlossomReveal onComplete={() => setShowCherryBlossom(false)}>
           <div className="min-h-screen relative">
@@ -582,4 +609,21 @@ export default function TripResults({ data, onBack }: TripResultsProps) {
       )}
     </>
   );
+  } catch (error: any) {
+    console.error('TripResults render error:', error);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="text-center p-8 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
+          <h2 className="text-2xl font-bold text-white mb-4">Error Loading Trip</h2>
+          <p className="text-gray-300 mb-6">There was an error displaying your trip results. Please try generating a new trip.</p>
+          <button
+            onClick={onBack}
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 }

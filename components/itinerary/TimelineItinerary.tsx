@@ -145,7 +145,7 @@ export default function TimelineItinerary({
         </p>
       </motion.div>
 
-      {/* Booking Iframes */}
+      {/* Booking Links (no iframes to avoid 403 / embedding issues) */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -157,24 +157,34 @@ export default function TimelineItinerary({
             <Plane className="w-8 h-8 text-blue-600" />
             <h3 className="text-xl font-bold text-gray-800">Flights</h3>
           </div>
-          <iframe
-            src={googleFlightsLink}
-            className="w-full h-64 rounded-lg border border-gray-200"
-            loading="lazy"
-            title="Google Flights"
-          />
+          <p className="text-gray-600 text-sm mb-4">
+            We&apos;ll open Google Flights in a new tab so you can pick real flights that match this plan.
+          </p>
+          <a
+            href={googleFlightsLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+          >
+            Search on Google Flights
+          </a>
         </div>
         <div className="bg-white rounded-2xl shadow-xl p-6 border border-purple-100">
           <div className="flex items-center gap-3 mb-4">
             <Hotel className="w-8 h-8 text-purple-600" />
             <h3 className="text-xl font-bold text-gray-800">Hotels</h3>
           </div>
-          <iframe
-            src={bookingLink}
-            className="w-full h-64 rounded-lg border border-gray-200"
-            loading="lazy"
-            title="Booking.com"
-          />
+          <p className="text-gray-600 text-sm mb-4">
+            We&apos;ll open Booking.com in a new tab with dates and guests pre-filled for this itinerary.
+          </p>
+          <a
+            href={bookingLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-colors"
+          >
+            Search hotels on Booking.com
+          </a>
         </div>
       </motion.div>
 

@@ -110,6 +110,7 @@ Rules (STRICT JSON):
 - Do NOT include comments of any kind (no // or /* */).
 - Do NOT include trailing commas.
 - Do NOT include any text before or after the JSON.
+- The JSON block above is only an example template. You MUST replace all values with accurate data for the actual trip requested: ${destination}, ${duration} days starting ${startDate}, and the given travelers, budget and pace.
 - NEVER use generic phrases like "explore local attractions".
 - Include real 2025 prices, events, weather, vegetarian options.
 - No "Why Visit", no maps, no fluff.

@@ -134,10 +134,10 @@ export async function POST(req: NextRequest) {
       async () => {
         const { text } = await generateText({
           model: openaiClient("gpt-4o-mini"),
-          temperature: 0.6,
-          maxTokens: 2000,
+          temperature: 0.3,
+          maxTokens: 1200,
           system:
-            "You are Grok, an expert travel editor AI. You MUST return only strict JSON, no commentary, no markdown.",
+            "You are Grok, an expert travel editor AI. Return ONLY valid JSON. No text before or after. No comments. No trailing commas.",
           prompt,
         });
 

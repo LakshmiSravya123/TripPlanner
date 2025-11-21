@@ -12,6 +12,8 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   MarkerType,
+  applyNodeChanges,
+  type NodeChange,
 } from "reactflow";
 import { motion } from "framer-motion";
 import { MapPin, Calendar, Clock, Cloud, Sun } from "lucide-react";
@@ -32,12 +34,14 @@ interface ItineraryFlowchartProps {
   itineraries: any;
   activeTab: "economic" | "balanced" | "luxury";
   onNodeClick?: (nodeId: string) => void;
+  onReorderDays?: (order: number[]) => void;
 }
 
 export default function ItineraryFlowchart({
   itineraries,
   activeTab,
   onNodeClick,
+  onReorderDays,
 }: ItineraryFlowchartProps) {
   // Convert itinerary to React Flow nodes and edges
   const { initialNodes, initialEdges } = useMemo(() => {
@@ -176,6 +180,37 @@ export default function ItineraryFlowchart({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      onNodesChange(changes);
+
+      if (!onReorderDays) return;
+
+      const hasPositionChangeForDay = changes.some(
+        (ch) => ch.type === "position" && ch.id.startsWith("day-")
+      );
+
+      if (!hasPositionChangeForDay) return;
+
+      // Compute updated node positions using React Flow's helper
+      const updatedNodes = applyNodeChanges(changes, nodes);
+
+      const order = updatedNodes
+        .filter((n) => n.id.startsWith("day-"))
+        .sort((a, b) => a.position.y - b.position.y)
+        .map((n) => {
+          const num = parseInt(n.id.replace("day-", ""), 10);
+          return Number.isNaN(num) ? undefined : num;
+        })
+        .filter((n): n is number => typeof n === "number");
+
+      if (order.length > 0) {
+        onReorderDays(order);
+      }
+    },
+    [nodes, onNodesChange, onReorderDays]
+  );
+
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
@@ -204,7 +239,7 @@ export default function ItineraryFlowchart({
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
+        onNodesChange={handleNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeClick={onNodeClickHandler}

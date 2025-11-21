@@ -3,47 +3,81 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
-import TripResults from "@/components/TripResults";
-import MagicalForm from "@/components/magic/MagicalForm";
 import InkRevealText from "@/components/magic/InkRevealText";
+import TimelineItinerary from "@/components/itinerary/TimelineItinerary";
+import Flowchart from "@/components/Flowchart";
+import AIChatSidebar from "@/components/AIChatSidebar";
+import { Sparkles, Loader2, Calendar as CalendarIcon, MapPin, Users, DollarSign, Gauge } from "lucide-react";
+import { useSmoothScroll } from "@/hooks/useSmoothScroll";
+import { toast } from "sonner";
+import type { ItineraryData } from "@/lib/prompt";
+
 // Dynamically import Globe3D to avoid SSR issues with Three.js
 const Globe3D = dynamic(() => import("@/components/magic/Globe3D"), { 
   ssr: false,
   loading: () => <div className="w-full h-full flex items-center justify-center"><div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>
 });
-import { Sparkles, Loader2 } from "lucide-react";
-import { useSmoothScroll } from "@/hooks/useSmoothScroll";
-import { toast } from "sonner";
 
 // Dynamically import heavy components
 const Confetti = dynamic(() => import("react-confetti"), { ssr: false });
 
 export default function Home() {
-  const [tripData, setTripData] = useState<any>(null);
+  const [itinerary, setItinerary] = useState<ItineraryData | null>(null);
+  const [meta, setMeta] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [destination, setDestination] = useState("");
+  const [destination, setDestination] = useState("Japan");
+  const [startDate, setStartDate] = useState("");
+  const [duration, setDuration] = useState<number>(7);
+  const [travelersDescription, setTravelersDescription] = useState("2 adults");
+  const [budgetLevel, setBudgetLevel] = useState("Mid");
+  const [pace, setPace] = useState("Balanced");
+  const [openaiKey, setOpenaiKey] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Smooth scroll setup
   useSmoothScroll();
 
-  const handleSubmit = async (formData: any) => {
+  useEffect(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 7);
+    if (!startDate) {
+      setStartDate(tomorrow.toISOString().split("T")[0]);
+    }
+    if (typeof window !== "undefined") {
+      const savedKey = localStorage.getItem("openai_api_key");
+      if (savedKey) {
+        setOpenaiKey(savedKey);
+      }
+    }
+  }, [startDate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!destination || !startDate || !duration) return;
+
     setLoading(true);
-    setDestination(formData.destination);
-    
+
     try {
       // Create AbortController for timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout (more reasonable)
 
-      const response = await fetch("/api/trip", {
+      const response = await fetch("/api/generate", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          destination,
+          startDate,
+          duration,
+          travelersDescription,
+          budgetLevel,
+          pace,
+          openaiKey: openaiKey || undefined,
+        }),
         signal: controller.signal,
         cache: "no-store",
       });
@@ -74,10 +108,26 @@ export default function Home() {
         throw new Error("Invalid response from server. Please check your API key and try again.");
       }
       
+      const dataItinerary: ItineraryData | null = result?.itinerary || null;
+      const dataMeta = result?.meta || null;
+
+      if (!dataItinerary || !dataMeta) {
+        throw new Error("Server returned an incomplete itinerary. Please try again.");
+      }
+
+      if (openaiKey) {
+        try {
+          localStorage.setItem("openai_api_key", openaiKey);
+        } catch {
+          // ignore storage errors
+        }
+      }
+
       // Cherry blossom reveal animation - use requestAnimationFrame to avoid React 423 error
       requestAnimationFrame(() => {
         setTimeout(() => {
-          setTripData(result);
+          setItinerary(dataItinerary);
+          setMeta(dataMeta);
           setShowConfetti(true);
           setTimeout(() => setShowConfetti(false), 5000);
         }, 2000);
@@ -123,7 +173,114 @@ export default function Home() {
     }
   };
 
-  if (tripData) {
+  if (itinerary && meta) {
+    const travelersMatch = typeof meta.travelersDescription === "string" ? meta.travelersDescription.match(/(\d+)/) : null;
+    const travelersCount = travelersMatch ? parseInt(travelersMatch[1], 10) || 2 : 2;
+
+    const daysForTimeline = Array.isArray(itinerary.days)
+      ? itinerary.days.map((day: any, index: number) => ({
+          day: day.day ?? index + 1,
+          date: day.date,
+          title: day.city,
+          dailyTotal: day.dailyTotal,
+          activities: Array.isArray(day.activities)
+            ? day.activities.map((act: any) => ({
+                time: act.time,
+                title: act.activity,
+                description: act.note,
+                transportation: act.transport,
+                cost: act.cost,
+                tips: act.veggieTip,
+              }))
+            : [],
+        }))
+      : [];
+
+    const handleReorderDays = (order: number[]) => {
+      if (!itinerary || !Array.isArray(itinerary.days) || order.length === 0) return;
+
+      const originalDays = itinerary.days;
+      const numbered = originalDays.map((day: any, index: number) => ({
+        value: day,
+        num: typeof day.day === "number" ? day.day : index + 1,
+      }));
+
+      const byNum = new Map<number, any>();
+      numbered.forEach((d) => {
+        if (!byNum.has(d.num)) {
+          byNum.set(d.num, d.value);
+        }
+      });
+
+      const reordered: any[] = [];
+      order.forEach((num) => {
+        const d = byNum.get(num);
+        if (d) {
+          reordered.push(d);
+          byNum.delete(num);
+        }
+      });
+
+      // Append any remaining days (if any) to preserve all content
+      byNum.forEach((d) => reordered.push(d));
+
+      const updatedItinerary: ItineraryData = {
+        ...itinerary,
+        days: reordered,
+      };
+
+      setItinerary(updatedItinerary);
+
+      // Optionally ask the AI to adjust transport/logistics for the new order
+      const sequence = order.join(", ");
+      const userRequest = `User reordered the trip days to this sequence: ${sequence}. Adjust only transport, transitions, and any date-specific references to match this new order, keeping activities and cities otherwise the same.`;
+
+      (async () => {
+        try {
+          const res = await fetch("/api/edit", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              itinerary: updatedItinerary,
+              userRequest,
+            }),
+          });
+
+          if (!res.ok) {
+            let errorText = "";
+            try {
+              const errorData = await res.json();
+              errorText =
+                typeof errorData.error === "string"
+                  ? errorData.error
+                  : `HTTP ${res.status}: ${res.statusText}`;
+            } catch {
+              errorText = `HTTP ${res.status}: ${res.statusText}`;
+            }
+            throw new Error(errorText);
+          }
+
+          const json = await res.json();
+          if (json && json.itinerary) {
+            setItinerary(json.itinerary as ItineraryData);
+          }
+        } catch (error: any) {
+          console.error("Error updating itinerary after reorder:", error);
+          const message =
+            typeof error?.message === "string"
+              ? error.message
+              : "Failed to adjust itinerary after reordering days.";
+          toast.error("AI update for new day order failed", {
+            description: message,
+            duration: 8000,
+          });
+        }
+      })();
+    };
+
     return (
       <>
         {showConfetti && (
@@ -139,17 +296,62 @@ export default function Home() {
             )}
           </div>
         )}
-        <TripResults 
-          data={tripData} 
-          onBack={() => {
-            try {
-              setTripData(null);
-            } catch (error) {
-              console.error('Error clearing trip data:', error);
-              window.location.reload();
-            }
-          }} 
-        />
+        <main className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+          <div className="relative z-10 container mx-auto px-4 py-8 md:py-16">
+            <div className="flex items-center justify-between mb-8">
+              <button
+                onClick={() => {
+                  try {
+                    setItinerary(null);
+                    setMeta(null);
+                  } catch (error) {
+                    console.error("Error clearing itinerary:", error);
+                    if (typeof window !== "undefined") {
+                      window.location.reload();
+                    }
+                  }
+                }}
+                className="text-sm md:text-base px-4 py-2 rounded-full border border-white/30 text-white/90 hover:bg-white/10 transition-all"
+              >
+                Back to planner
+              </button>
+              <div className="text-right text-purple-100 text-xs md:text-sm">
+                <div className="font-semibold">{meta.destination}</div>
+                <div>
+                  {meta.startDate} • {meta.duration} days • {meta.travelersDescription}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-8 lg:grid-cols-[2fr,1.1fr] items-start">
+              <div className="space-y-8">
+                <TimelineItinerary
+                  destination={meta.destination}
+                  startDate={meta.startDate}
+                  endDate={meta.endDate}
+                  travelers={travelersCount}
+                  group={meta.travelersDescription}
+                  days={daysForTimeline}
+                />
+
+                <Flowchart days={daysForTimeline} onReorderDays={handleReorderDays} />
+              </div>
+
+              <AIChatSidebar
+                itinerary={itinerary}
+                meta={{
+                  destination: meta.destination,
+                  startDate: meta.startDate,
+                  duration: meta.duration,
+                  travelersDescription: meta.travelersDescription,
+                  budgetLevel: meta.budgetLevel,
+                  pace: meta.pace,
+                }}
+                onUpdate={setItinerary}
+              />
+            </div>
+          </div>
+        </main>
       </>
     );
   }
@@ -305,7 +507,136 @@ export default function Home() {
           className="max-w-2xl mx-auto"
         >
           <div className="glass-card rounded-3xl p-8 md:p-10 shadow-2xl border border-white/20">
-            <MagicalForm onSubmit={handleSubmit} loading={loading} />
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-100 mb-3">
+                  <MapPin className="w-5 h-5 text-purple-300" />
+                  Destination
+                </label>
+                <input
+                  type="text"
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  className="relative w-full px-6 py-4 rounded-2xl border-2 border-purple-200/50 bg-white/80 backdrop-blur-xl focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-200/50 transition-all text-lg text-gray-900"
+                  placeholder="Where do you want to go?"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-100 mb-3">
+                    <CalendarIcon className="w-5 h-5 text-blue-300" />
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="relative w-full px-6 py-4 rounded-2xl border-2 border-blue-200/50 bg-white/80 backdrop-blur-xl focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-200/50 transition-all text-gray-900"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-100 mb-3">
+                    <Gauge className="w-5 h-5 text-emerald-300" />
+                    Trip Duration
+                  </label>
+                  <select
+                    value={duration}
+                    onChange={(e) => setDuration(Number(e.target.value) || 7)}
+                    className="relative w-full px-6 py-4 rounded-2xl border-2 border-emerald-200/50 bg-white/80 backdrop-blur-xl focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-200/50 transition-all text-gray-900"
+                  >
+                    {[3, 5, 7, 10, 14].map((d) => (
+                      <option key={d} value={d}>
+                        {d} days
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-100 mb-3">
+                    <Users className="w-5 h-5 text-green-300" />
+                    Travelers
+                  </label>
+                  <input
+                    type="text"
+                    value={travelersDescription}
+                    onChange={(e) => setTravelersDescription(e.target.value)}
+                    placeholder="e.g., 2 adults vegetarian"
+                    className="relative w-full px-6 py-4 rounded-2xl border-2 border-green-200/50 bg-white/80 backdrop-blur-xl focus:border-green-500 focus:outline-none focus:ring-4 focus:ring-green-200/50 transition-all text-lg text-gray-900"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-100 mb-3">
+                    <DollarSign className="w-5 h-5 text-amber-300" />
+                    Budget Level
+                  </label>
+                  <select
+                    value={budgetLevel}
+                    onChange={(e) => setBudgetLevel(e.target.value)}
+                    className="relative w-full px-6 py-4 rounded-2xl border-2 border-amber-200/50 bg-white/80 backdrop-blur-xl focus:border-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-200/50 transition-all text-gray-900"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Mid">Mid</option>
+                    <option value="High">High</option>
+                    <option value="Luxury">Luxury</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-100 mb-3">
+                    <Gauge className="w-5 h-5 text-pink-300" />
+                    Travel Pace
+                  </label>
+                  <select
+                    value={pace}
+                    onChange={(e) => setPace(e.target.value)}
+                    className="relative w-full px-6 py-4 rounded-2xl border-2 border-pink-200/50 bg-white/80 backdrop-blur-xl focus:border-pink-500 focus:outline-none focus:ring-4 focus:ring-pink-200/50 transition-all text-gray-900"
+                  >
+                    <option value="Relaxed">Relaxed</option>
+                    <option value="Balanced">Balanced</option>
+                    <option value="Packed">Packed</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-100 mb-3">
+                    <Sparkles className="w-5 h-5 text-purple-300" />
+                    OpenAI API Key <span className="text-xs text-gray-300 font-normal">(optional - saved locally)</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={openaiKey}
+                    onChange={(e) => setOpenaiKey(e.target.value)}
+                    className="relative w-full px-6 py-4 rounded-2xl border-2 border-purple-200/50 bg-white/80 backdrop-blur-xl focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-200/50 transition-all text-sm font-mono text-gray-900"
+                    placeholder="sk-... (optional - will use server key if not provided)"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="relative w-full py-5 text-lg font-semibold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-700 hover:via-pink-700 hover:to-indigo-700 text-white shadow-2xl rounded-2xl overflow-hidden group disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Creating your magical trip...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" /> Generate My Trip
+                  </>
+                )}
+              </button>
+            </form>
           </div>
         </motion.div>
 

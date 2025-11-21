@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
         return object;
       },
       {
-        retries: 2,
+        retries: 0,
       }
     );
 

@@ -310,8 +310,9 @@ Now generate the detailed itinerary with these specific details:`;
 
       const retryResult = await generateText({
         model: openai("gpt-4o-mini"),
+        system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
         prompt: chainOfThoughtPrompt,
-        temperature: 0.7,
+        temperature: 0.3, // Lower temperature for more consistent JSON output
         maxTokens: 8000, // Increased for more detailed content
       });
       text = retryResult.text;

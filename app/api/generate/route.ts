@@ -82,44 +82,7 @@ function extractAndParseJson(text: string, fallbackData?: { destination: string;
       return parsed as ItineraryData;
     } catch (finalErr: any) {
       console.error("/api/generate JSON recovery failed:", finalErr?.message);
-      
-      // Final fallback: return a minimal valid itinerary structure if fallback data provided
-      if (fallbackData) {
-        console.log("Generating fallback itinerary due to JSON parse failure");
-        return {
-          overview: {
-            title: `Your ${fallbackData.destination} Adventure`,
-            duration: `${fallbackData.duration} days`,
-            route: fallbackData.destination,
-            budgetBreakdown: `Estimated total for ${fallbackData.travelersDescription}`,
-            transport: "Local transport options available",
-          },
-          days: Array.from({ length: fallbackData.duration }, (_, i) => ({
-            day: i + 1,
-            date: new Date(new Date(fallbackData.startDate).getTime() + i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            weekday: new Date(new Date(fallbackData.startDate).getTime() + i * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'short' }),
-            city: fallbackData.destination,
-            weather: "Check local forecast",
-            dailyTotal: "$150",
-            activities: [
-              {
-                time: "9:00 AM",
-                activity: "Explore local attractions",
-                cost: "$50",
-                duration: "3h",
-                transport: "Walking/Local transport",
-                note: "AI had trouble generating detailed plans - please try again with a simpler request",
-              },
-            ],
-          })),
-          tips: [
-            "The AI encountered an issue generating your detailed itinerary",
-            "Please try again with a simpler request",
-            "Consider reducing the number of days or being less specific about activities",
-          ],
-        } as ItineraryData;
-      }
-      
+
       throw new Error(
         "The AI returned malformed JSON for this itinerary. Please try again, or make your request a bit simpler (fewer constraints)."
       );

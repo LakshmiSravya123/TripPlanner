@@ -282,9 +282,7 @@ If the response seems generic or lacks specifics, use chain-of-thought reasoning
 Return the JSON now:`;
 
     let { text } = await generateText({
-      model: openai("gpt-4o-mini", {
-        apiKey: apiKey,
-      }),
+      model: openai("gpt-4o-mini"),
       system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
       prompt: reasoningPrompt,
       temperature: 0.3, // Lower temperature for more consistent JSON output

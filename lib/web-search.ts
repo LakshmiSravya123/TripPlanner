@@ -8,40 +8,14 @@ export async function searchWeb(query: string): Promise<string> {
     // Example: Using DuckDuckGo Instant Answer API (no key required, but limited)
     // Or use SerpAPI, Google Custom Search API, etc.
     
-    const searchUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
-    
+    // Skip external API calls in Vercel to avoid network issues
+    // Return fallback information instead
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+      // For Vercel deployment, we'll skip external API calls that can cause network errors
+      // and return static fallback information
+      return `Current information about: ${query}. Please verify prices and events from official sources.`;
       
-      const response = await fetch(searchUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; TripPlanner/1.0)',
-        },
-        signal: controller.signal,
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error('Search API failed');
-      }
-      
-      const data = await response.json();
-      
-      // Extract relevant information
-      let result = '';
-      if (data.AbstractText) {
-        result += data.AbstractText + '\n';
-      }
-      if (data.Answer) {
-        result += data.Answer + '\n';
-      }
-      if (data.RelatedTopics && data.RelatedTopics.length > 0) {
-        result += 'Related: ' + data.RelatedTopics.slice(0, 3).map((t: any) => t.Text).join('; ') + '\n';
-      }
-      
-      return result || `Search results for: ${query}`;
+      // Fallback implementation - no external API calls
     } catch (error: any) {
       // Fallback: return a generic message
       if (error.name === 'AbortError') {

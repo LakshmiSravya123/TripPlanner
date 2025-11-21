@@ -274,6 +274,23 @@ Return the JSON now:`;
 
   const openaiClient = createOpenAI({
     apiKey,
+    baseURL: 'https://api.openai.com/v1',
+    fetch: (url, options) => {
+      // Add timeout and better error handling for Vercel
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+      
+      return fetch(url, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          ...options?.headers,
+          'User-Agent': 'TripPlanner/1.0',
+        },
+      }).finally(() => {
+        clearTimeout(timeoutId);
+      });
+    },
   });
 
   try {
@@ -548,9 +565,13 @@ function formatOpenAIError(error: any): Error {
     errorMessage?.includes("network") ||
     errorMessage?.includes("timeout") ||
     errorMessage?.includes("ECONNREFUSED") ||
-    errorMessage?.includes("fetch")
+    errorMessage?.includes("fetch") ||
+    errorMessage?.includes("ENOTFOUND") ||
+    errorMessage?.includes("ETIMEDOUT") ||
+    errorMessage?.includes("connect ECONNREFUSED") ||
+    errorMessage?.includes("getaddrinfo ENOTFOUND")
   ) {
-    message = "Internet issue—check connection and retry.";
+    message = "Network connectivity issue. Please check your API key and try again.";
   } else if (
     errorMessage?.includes("rate_limit") ||
     errorCode === 429 ||

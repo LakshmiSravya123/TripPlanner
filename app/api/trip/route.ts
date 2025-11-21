@@ -4,7 +4,7 @@ import { generateTripPlan } from "@/lib/ai";
 // Use Node.js runtime (not edge) for longer timeouts and dynamic env vars
 export const runtime = "nodejs";
 // Increase timeout for Vercel (max 60s for Hobby, 300s for Pro)
-export const maxDuration = 120; // 2 minutes - more reasonable timeout
+export const maxDuration = 60; // 1 minute - Vercel Hobby limit
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,7 +71,11 @@ export async function POST(request: NextRequest) {
     } else if (
       errorMessage.includes("Internet issue") ||
       errorMessage.includes("network") ||
-      errorMessage.includes("fetch")
+      errorMessage.includes("fetch") ||
+      errorMessage.includes("Network connectivity issue") ||
+      errorMessage.includes("ENOTFOUND") ||
+      errorMessage.includes("ETIMEDOUT") ||
+      errorMessage.includes("ECONNREFUSED")
     ) {
       statusCode = 503;
     } else if (errorMessage.includes("timeout") || errorMessage.includes("aborted")) {

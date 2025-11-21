@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "./globals.css";
 import { Toaster } from "@/components/Toaster";
 import "leaflet/dist/leaflet.css";
@@ -38,10 +39,11 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className={inter.className}>
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
         <Toaster />
       </body>
     </html>
   );
 }
-

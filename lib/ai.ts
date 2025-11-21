@@ -92,7 +92,7 @@ export async function generateTripPlan(formData: TripFormData) {
   });
 
   try {
-    // Ultra-fast generation like Grok
+    // Ultra-fast generation with better error handling
     const result = await generateText({
       model: openaiClient("gpt-4o-mini"),
       system: "Return ONLY valid JSON. No markdown.",
@@ -101,36 +101,87 @@ export async function generateTripPlan(formData: TripFormData) {
 Return JSON: {"destination":"${destination}","description":"Brief overview","overview":{"budget":{"total":"$${Math.round((calculatedBudgetPerNight * numDays + 300) * travelers)}"},"transportPass":"Pass recommendation","practicalInfo":["Currency","Tips"]},"places":[{"name":"Main Attraction","type":"landmark","coordinates":[0,0]}],"dates":{"start":"${startDate}","end":"${endDate}"},"travelers":${travelers},"weather":${JSON.stringify(weatherData)},"flights":{"economy":{"airline":"Airline","priceRange":"$600-900","link":"${googleFlightsLink}"}},"hotels":{"midRange":[{"name":"Hotel","priceRange":"$${calculatedBudgetPerNight}","link":"${bookingMidLink}"}]},"itineraries":{"balanced":[]},"tips":["Tip 1"],"costs":{"balanced":{"total":"$${1200 * travelers}"}}}
 
 Make ${numDays + 1} days in balanced array. Each day: {"day":0,"date":"${startDate}","title":"Arrival","activities":[{"time":"2PM","title":"Check-in","location":"Hotel","description":"Arrive and settle","cost":"$0"}],"dailyTotal":"$50"}. Use real places/prices.`,
-      temperature: 0.8,
-      maxTokens: 1800,
+      temperature: 0.7, // Slightly lower for more consistent results
+      maxTokens: 2000, // Slightly higher for complete responses
     });
 
-    let text = result.text.trim();
+    let text = result.text?.trim();
     
-    // Simple JSON extraction
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
-    
-    if (start === -1 || end === -1) {
-      throw new Error("No JSON found");
+    if (!text) {
+      throw new Error("Empty response from AI service");
     }
     
-    let jsonString = text.substring(start, end + 1);
+    // Robust JSON extraction
+    let jsonString = text;
+    
+    // Remove any markdown code blocks
+    jsonString = jsonString.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+    
+    // Find JSON boundaries more reliably
+    const start = jsonString.indexOf("{");
+    const end = jsonString.lastIndexOf("}");
+    
+    if (start === -1 || end === -1 || start >= end) {
+      console.error("Invalid JSON boundaries in response:", text.substring(0, 200));
+      throw new Error("Invalid response format from AI service");
+    }
+    
+    jsonString = jsonString.substring(start, end + 1);
+    
+    // Clean up common JSON issues
     jsonString = jsonString.replace(/,(\s*[}\]])/g, "$1"); // Fix trailing commas
+    jsonString = jsonString.replace(/\n/g, ' '); // Remove newlines that might break parsing
+    jsonString = jsonString.replace(/\s+/g, ' '); // Normalize whitespace
     
-    const parsedResult = JSON.parse(jsonString);
-    
-    // Minimal validation
-    if (!parsedResult.destination) parsedResult.destination = destination;
-    if (!parsedResult.weather && weatherData.length > 0) {
-      parsedResult.weather = weatherData;
+    let parsedResult;
+    try {
+      parsedResult = JSON.parse(jsonString);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      console.error("Problematic JSON:", jsonString.substring(0, 500));
+      throw new Error("Invalid JSON response from AI service");
     }
     
-    return parsedResult;
+    // Validate and ensure required structure
+    if (!parsedResult || typeof parsedResult !== 'object') {
+      throw new Error("Invalid response structure from AI service");
+    }
+    
+    // Ensure required fields with safe defaults
+    const safeResult = {
+      destination: parsedResult.destination || destination,
+      description: parsedResult.description || `A wonderful trip to ${destination}`,
+      overview: parsedResult.overview || {
+        budget: { total: `$${Math.round((calculatedBudgetPerNight * numDays + 300) * travelers)}` },
+        transportPass: "Local transport passes available",
+        practicalInfo: ["Check local currency", "Verify visa requirements"]
+      },
+      places: Array.isArray(parsedResult.places) ? parsedResult.places : [],
+      dates: parsedResult.dates || { start: startDate, end: endDate },
+      travelers: parsedResult.travelers || travelers,
+      weather: Array.isArray(parsedResult.weather) ? parsedResult.weather : weatherData,
+      flights: parsedResult.flights || { economy: { airline: "Major Airlines", priceRange: "$600-900", link: googleFlightsLink } },
+      hotels: parsedResult.hotels || { midRange: [{ name: "Recommended Hotels", priceRange: `$${calculatedBudgetPerNight}`, link: bookingMidLink }] },
+      itineraries: parsedResult.itineraries || { balanced: [] },
+      tips: Array.isArray(parsedResult.tips) ? parsedResult.tips : ["Book accommodations in advance", "Check local weather", "Carry local currency"],
+      costs: parsedResult.costs || { balanced: { total: `$${1200 * travelers}` } }
+    };
+    
+    return safeResult;
     
   } catch (error: any) {
     console.error("AI generation error:", error);
-    throw new Error("Failed to generate trip plan. Please try again.");
+    
+    // Provide more specific error messages
+    if (error.message?.includes("API key")) {
+      throw formatOpenAIError(error);
+    } else if (error.message?.includes("quota") || error.message?.includes("rate limit")) {
+      throw formatOpenAIError(error);
+    } else if (error.message?.includes("timeout") || error.message?.includes("network")) {
+      throw new Error("Request timed out. Please try again with a simpler destination or date range.");
+    } else {
+      throw new Error("Unable to generate trip plan. Please check your API key and try again.");
+    }
   }
 }
 

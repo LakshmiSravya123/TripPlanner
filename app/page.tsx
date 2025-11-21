@@ -102,8 +102,8 @@ export default function Home() {
         errorMessage = "Failed to generate trip plan. Please try again.";
       }
       
-      // Ensure we never show [object Object]
-      if (typeof errorMessage !== "string" || errorMessage.includes("[object")) {
+      // Ensure we never show [object Object] or undefined
+      if (typeof errorMessage !== "string" || errorMessage.includes("[object") || !errorMessage.trim()) {
         errorMessage = "Failed to generate trip plan. Please check your API key and try again.";
       }
       
@@ -126,14 +126,18 @@ export default function Home() {
   if (tripData) {
     return (
       <>
-        {showConfetti && typeof window !== "undefined" && (
-          <Confetti
-            width={window.innerWidth}
-            height={window.innerHeight}
-            recycle={false}
-            numberOfPieces={500}
-            gravity={0.3}
-          />
+        {showConfetti && (
+          <div suppressHydrationWarning>
+            {typeof window !== "undefined" && (
+              <Confetti
+                width={window.innerWidth}
+                height={window.innerHeight}
+                recycle={false}
+                numberOfPieces={500}
+                gravity={0.3}
+              />
+            )}
+          </div>
         )}
         <TripResults data={tripData} onBack={() => setTripData(null)} />
       </>
@@ -143,15 +147,16 @@ export default function Home() {
   return (
     <main className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Animated background particles - Client only to avoid hydration mismatch */}
-      {typeof window !== "undefined" && (
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(50)].map((_, i) => {
-            // Use deterministic seed for each particle to avoid hydration mismatch
-            const seed = i * 12345;
-            const seededRandom = (multiplier: number) => {
-              const x = Math.sin(seed + multiplier) * 10000;
-              return x - Math.floor(x);
-            };
+      <div suppressHydrationWarning>
+        {typeof window !== "undefined" && (
+          <div className="absolute inset-0 overflow-hidden">
+            {[...Array(50)].map((_, i) => {
+              // Use deterministic seed for each particle to avoid hydration mismatch
+              const seed = i * 12345;
+              const seededRandom = (multiplier: number) => {
+                const x = Math.sin(seed + multiplier) * 10000;
+                return x - Math.floor(x);
+              };
             const width = window.innerWidth || 1920;
             const height = window.innerHeight || 1080;
             return (
@@ -175,8 +180,9 @@ export default function Home() {
               />
             );
           })}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       <div ref={containerRef} className="relative z-10 container mx-auto px-4 py-8 md:py-16">
         {/* Hero Section with 3D Globe */}

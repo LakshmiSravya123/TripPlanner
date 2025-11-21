@@ -78,7 +78,7 @@ export const itinerarySchema = z.object({
 export function buildItinerarySchemaForDuration(duration: number) {
   const safeDuration = Math.max(1, Math.floor(duration || 1));
   return itinerarySchema.extend({
-    days: z.array(itineraryDaySchema).min(safeDuration).max(safeDuration),
+    days: z.array(itineraryDaySchema).min(1).max(safeDuration),
   });
 }
 

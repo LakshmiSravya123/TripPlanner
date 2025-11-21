@@ -65,128 +65,56 @@ export async function generateTripPlan(formData: TripFormData) {
     ? weatherData.map((w, i) => `Day ${i + 1} (${w.date}): ${w.min}–${w.max}°C, ${w.condition}`).join("\n")
     : "Weather data unavailable. Using general seasonal guidance.";
 
-  // Search for current prices and events (with timeout to prevent hanging)
-  // Make these non-blocking - run in parallel and don't wait too long
+  // Skip web searches to speed up generation - they're not critical and slow things down
+  // The AI model has knowledge of current prices and events
   let jrPassInfo = '';
   let currentEvents = '';
   let currentPrices = '';
   
-  // Run all searches in parallel with short timeouts
-  const searchPromises = [];
-  
+  // Don't wait for web searches - start AI generation immediately
+  // Web searches can run in background but we won't wait for them
   if (destination.toLowerCase().includes('japan')) {
-    searchPromises.push(
-      Promise.race([
-        searchCurrentPrice('JR Pass', 'Japan'),
-        new Promise<string>((resolve) => setTimeout(() => resolve(''), 3000)) // 3s timeout
-      ]).then(result => { jrPassInfo = result; }).catch(() => {})
-    );
+    searchCurrentPrice('JR Pass', 'Japan').then(result => { jrPassInfo = result; }).catch(() => {});
   }
-  
-  searchPromises.push(
-    Promise.race([
-      searchTravelInfo(destination, 'current events 2025'),
-      new Promise<string>((resolve) => setTimeout(() => resolve(''), 3000))
-    ]).then(result => { currentEvents = result; }).catch(() => {})
-  );
-  
-  searchPromises.push(
-    Promise.race([
-      searchTravelInfo(destination, 'current prices 2025'),
-      new Promise<string>((resolve) => setTimeout(() => resolve(''), 3000))
-    ]).then(result => { currentPrices = result; }).catch(() => {})
-  );
-  
-  // Wait max 3 seconds for all searches
-  await Promise.race([
-    Promise.all(searchPromises),
-    new Promise(resolve => setTimeout(resolve, 3000))
-  ]);
+  searchTravelInfo(destination, 'current events 2025').then(result => { currentEvents = result; }).catch(() => {});
+  searchTravelInfo(destination, 'current prices 2025').then(result => { currentPrices = result; }).catch(() => {});
 
   const groupDescription = group || `${travelers} ${travelers === 1 ? 'adult' : 'adults'}`;
   const budgetDescription = budget || (calculatedBudgetPerNight ? `$${calculatedBudgetPerNight}/night` : 'mid-range');
 
-  const systemPrompt = `Generate ONLY: Overview (route, budget breakdown, transport pass, embedded Google Flights iframe for sample round-trip & Booking.com iframes for hotels by city/dates). Then Day-by-Day (date header, timed bullets: activity/time/cost ¥/transport note, unique researched details like weather/events/veggie food—no repeats). End with Tips (apps, sustainability). Exclude Why Visit/Map/intros. Update via web_search for current prices/events (e.g., JR Pass ¥50k). Make engaging/realistic.`;
+  // Simplified, faster prompt - like Grok
+  const prompt = `Create a detailed ${numDays}-day travel itinerary for ${destination} starting ${startDate} for ${groupDescription}. Budget: ${budgetDescription}. Interests: ${interests.join(", ") || "General travel"}.
 
-  const exampleItinerary = `EXAMPLE FORMAT (follow this EXACTLY):
+Weather: ${weatherSummary}
 
-Overview:
-Route: Tokyo (Days 1–3) → Hakone/Mt. Fuji (Day 4) → Kyoto (Days 5–6) → Nara/Osaka (Day 7).
-Transport: 7-day JR Pass (~¥50,000/person; activate Day 4). Suica card for local (~¥3,000 load).
-Budget Breakdown: Transport ¥60,000; Food ¥40,000; Entries ¥15,000; Misc ¥20,000 (per person).
+Return ONLY valid JSON (no markdown, no extra text). Structure:
+{
+  "destination": "${destination}",
+  "description": "Brief overview",
+  "overview": {
+    "budget": {"accommodation": "$${Math.round(calculatedBudgetPerNight * numDays)}", "food": "$50-100/day", "transport": "$100-200", "activities": "$200-400", "total": "$${Math.round((calculatedBudgetPerNight * numDays + 350) * travelers)}"},
+    "transportPass": "Recommendation with cost",
+    "practicalInfo": ["Currency", "Tipping", "SIM/Wi-Fi"]
+  },
+  "places": [{"name": "Place", "description": "Brief", "type": "landmark", "coordinates": [lon, lat]}],
+  "dates": {"start": "${startDate}", "end": "${endDate}"},
+  "travelers": ${travelers},
+  "weather": ${JSON.stringify(weatherData)},
+  "flights": {"economy": {"priceRange": "$600-900", "link": "${googleFlightsLink}"}},
+  "hotels": {"budget": [{"name": "Hotel", "priceRange": "$${Math.round(calculatedBudgetPerNight * 0.7)}", "link": "${bookingBudgetLink}"}], "midRange": [{"name": "Hotel", "priceRange": "$${Math.round(calculatedBudgetPerNight * 1.2)}", "link": "${bookingMidLink}"}], "luxury": [{"name": "Hotel", "priceRange": "$${Math.round(calculatedBudgetPerNight * 1.8)}", "link": "${bookingLuxuryLink}"}]},
+  "itineraries": {
+    "balanced": [{"day": 0, "date": "${startDate}", "title": "Arrival", "activities": [{"time": "9AM-12PM", "title": "Activity", "location": "Place", "description": "Details", "transportation": "Method", "cost": "$50"}]}]
+  },
+  "tips": ["Tip 1", "Tip 2"],
+  "costs": {"balanced": {"perPerson": "$1200-1800", "total": "$${1200 * travelers}-$${1800 * travelers}"}}
+}
 
-Day 1: Fri, Nov 21 – Tokyo Arrival & Urban Buzz
-9AM–12PM: Settle in Shinjuku; stroll Kabukicho (free, Godzilla statue photo-op).
-1–5PM: Meiji Shrine & Harajuku (free; autumn ginkgo leaves). Lunch: Vegetarian tonkatsu at Ain Soph (¥1,500).
-6–9PM: Shibuya Crossing + Sky Deck (¥2,400; sunset views). Dinner: Veggie ramen at Ichiran (¥1,200).
-Transport: Airport train (~¥1,200). Daily Total: ¥6,300.`;
-
-  const prompt = `You are an expert travel planner. ${systemPrompt}
-
-Create a HYPER-DETAILED travel itinerary for ${destination} starting ${startDate} for ${groupDescription}.
-
-${exampleItinerary}
-
-Budget: ${budgetDescription}
-Interests: ${interests.join(", ") || "General travel"}
-
-Weather Forecast:
-${weatherSummary}
-
-${jrPassInfo ? `Current Transport Info: ${jrPassInfo}\n` : ''}
-${currentEvents ? `Current Events: ${currentEvents}\n` : ''}
-${currentPrices ? `Current Prices: ${currentPrices}\n` : ''}
-
-CRITICAL: You MUST generate REAL, SPECIFIC content. NO generic placeholders like "Guided tour - 9AM - $40". 
-Instead use: "9AM–12PM: Senso-ji Temple, Asakusa (free; early for Shichi-Go-San kimono sightings). Lunch: Shojin vegan bento at Torikyu (¥1,800)."
-
-CRITICAL STRUCTURE - Follow this EXACT format:
-
-1. OVERVIEW SECTION:
-   - Total budget breakdown (accommodation, food, transport, activities)
-   - Transport pass recommendations (e.g., "7-day JR Pass - activate on Day X", "City pass", etc.)
-   - Key practical info (currency, tipping, SIM/Wi-Fi, etc.)
-
-2. DAY-BY-DAY ITINERARY:
-   Format each day as:
-   Day X – [Theme/Title] (Date: YYYY-MM-DD)
-   
-   [Time, e.g., 7:00] [Activity Title]
-   - Location: [Specific address/area]
-   - Description: [Detailed 2-3 sentence description]
-   - Transport: [How to get there, e.g., "Shinkansen Tokyo → Odawara (35 min, ¥3,000)"]
-   - Cost: [Specific price, e.g., "¥2,400" or "$50"]
-   - Link: [Booking link if applicable]
-   - Tips: [Practical advice, e.g., "Book weeks ahead!", "Go early to avoid crowds"]
-   
-   [Time, e.g., 12:00] [Lunch/Activity]
-   - [Same structure]
-   
-   Daily Total: [Transport + Activities + Food = $X]
-
-3. TIPS SECTION:
-   - Booking recommendations
-   - Best times to visit attractions
-   - Money-saving tips
-   - Cultural notes
-   - Current events/seasonal considerations
-
-REQUIREMENTS:
-- Include Day 0 (Arrival) with airport transfer, hotel check-in, transport pass pickup
-- Include departure day with airport transfer details
-- Every activity MUST have: time, location, transport method, cost
-- Use REALISTIC prices in local currency
-- Include specific restaurant names and booking links where possible
-- Transportation details must be specific (train lines, duration, cost)
-- NO generic placeholders - use actual place names, restaurant names, costs
-- Weather-aware: suggest indoor alternatives if rain forecasted
-- Keep pacing realistic - don't overpack days
-- Include vegetarian options if relevant
-
-CRITICAL: Return ONLY valid JSON with no comments, no markdown, no extra text. The JSON must be parseable.
-DO NOT include any explanatory text before or after the JSON.
-DO NOT wrap the JSON in markdown code blocks.
-START your response with { and END with }.
+RULES:
+- ${numDays + 1} days total (Day 0 arrival + ${numDays} full days)
+- Each activity: time, title, location, description, transportation, cost
+- Use REAL prices and specific place/restaurant names
+- Include dailyTotal for each day
+- NO generic placeholders
 
 Return this exact JSON structure:
 {

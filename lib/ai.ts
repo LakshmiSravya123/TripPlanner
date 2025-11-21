@@ -288,19 +288,21 @@ Return the JSON now:`;
     const originalKey = process.env.OPENAI_API_KEY;
     process.env.OPENAI_API_KEY = apiKey;
 
+    let text: string;
     try {
-      let { text } = await generateText({
+      const result = await generateText({
         model: openai("gpt-4o-mini"),
         system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
         prompt: reasoningPrompt,
         temperature: 0.3, // Lower temperature for more consistent JSON output
         maxTokens: 8000, // Increased for more detailed content
       });
-    
-    // If response is too generic, retry with chain-of-thought
-    if (text.includes("generic") || text.length < 1000 || !text.includes("activities") || text.includes("Guided tour") || text.includes("Cultural experience")) {
-      console.log("Response seems generic, retrying with chain-of-thought...");
-      const chainOfThoughtPrompt = `${prompt}
+      text = result.text;
+      
+      // If response is too generic, retry with chain-of-thought
+      if (text.includes("generic") || text.length < 1000 || !text.includes("activities") || text.includes("Guided tour") || text.includes("Cultural experience")) {
+        console.log("Response seems generic, retrying with chain-of-thought...");
+        const chainOfThoughtPrompt = `${prompt}
 
 CHAIN-OF-THOUGHT REASONING REQUIRED - BE SPECIFIC:
 1. List 10+ specific attractions in ${destination} with exact names and current entry costs
@@ -316,14 +318,34 @@ Instead use: "9AM–12PM: Senso-ji Temple, Asakusa (free; early for Shichi-Go-Sa
 
 Now generate the detailed itinerary with these specific details:`;
 
-      const retryResult = await generateText({
-        model: openai("gpt-4o-mini"),
-        system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
-        prompt: chainOfThoughtPrompt,
-        temperature: 0.3, // Lower temperature for more consistent JSON output
-        maxTokens: 8000, // Increased for more detailed content
-      });
-      text = retryResult.text;
+        const retryResult = await generateText({
+          model: openai("gpt-4o-mini"),
+          system: "You are a JSON-only travel itinerary generator. You MUST return ONLY valid JSON. No markdown, no explanations, no text before or after the JSON. Start with { and end with }.",
+          prompt: chainOfThoughtPrompt,
+          temperature: 0.3, // Lower temperature for more consistent JSON output
+          maxTokens: 8000, // Increased for more detailed content
+        });
+        text = retryResult.text;
+      }
+    } catch (apiError: any) {
+      // Restore original key before throwing
+      if (originalKey !== undefined) {
+        process.env.OPENAI_API_KEY = originalKey;
+      } else {
+        delete process.env.OPENAI_API_KEY;
+      }
+      
+      // Check for API key errors
+      if (apiError.message?.includes("API key") || apiError.message?.includes("401") || apiError.message?.includes("Unauthorized")) {
+        throw new Error("Invalid OpenAI API key. Please check your API key and try again.");
+      }
+      if (apiError.message?.includes("rate limit") || apiError.message?.includes("429")) {
+        throw new Error("OpenAI API rate limit exceeded. Please try again later or check your account limits.");
+      }
+      if (apiError.message?.includes("quota") || apiError.message?.includes("insufficient_quota")) {
+        throw new Error("OpenAI API quota exceeded. Please add credits to your OpenAI account.");
+      }
+      throw apiError;
     } finally {
       // Restore original key
       if (originalKey !== undefined) {
